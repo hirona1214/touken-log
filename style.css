@@ -1,229 +1,143 @@
-/* --- 1. ベースデザイン（ゲームの背景色に寄せる） --- */
+/* 基本設定 */
 body {
-    background-color: #e9e5dc; /* 演練や出陣画面のような薄いベージュ */
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    background-color: #f4f1ea; /* 本丸っぽい和紙のような色 */
     color: #333;
-    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
     margin: 0;
     padding: 0;
 }
 
-/* --- 2. ヘッダー（上部のステータスバー風） --- */
 header {
-    background-color: #f8f8f8;
-    border-bottom: 2px solid #ccc;
+    background-color: #2c3e50;
+    color: white;
     padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.header-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.main-title {
-    font-size: 1.2rem;
-    color: #444;
-    font-weight: bold;
-    margin: 0;
-    padding-left: 10px;
-    border-left: 5px solid #2d5d2d; /* 目録ボタンの緑色をアクセントに */
-}
+h1 { font-size: 1.2rem; margin: 0; }
 
-.header-btns {
-    display: flex;
-    gap: 10px;
-}
-
-/* --- 3. ボタンデザイン（「出陣」赤と「目録」緑） --- */
-.plus-report-btn {
-    background-color: #b32025; /* 刀剣風の赤 */
-    color: #fff;
-    border: 1px solid #8a1a1d;
+.header-btns button {
+    margin-left: 10px;
     padding: 8px 15px;
     border-radius: 4px;
-    font-weight: bold;
+    border: none;
     cursor: pointer;
-    transition: transform 0.1s;
-}
-
-.edit-btn {
-    background-color: #2d5d2d; /* 刀剣風の緑 */
-    color: #fff;
-    border: 1px solid #1e3d1e;
-    padding: 8px 15px;
-    border-radius: 4px;
     font-weight: bold;
-    cursor: pointer;
 }
 
-.plus-report-btn:hover, .edit-btn:hover {
-    opacity: 0.9;
-    transform: scale(1.02);
-}
+#openModalBtn { background-color: #27ae60; color: white; }
+#editModeBtn { background-color: #7f8c8d; color: white; }
+#loginBtn { background-color: #ffffff; color: #333; }
 
-/* --- 4. メインコンテンツ（グラフエリア） --- */
-.container {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 0 15px;
-}
-
+/* グラフエリア */
 .chart-container {
-    background-color: #fff;
+    background: white;
+    margin: 20px auto;
     padding: 20px;
-    border: 1px solid #ccc;
-    height: 400px; /* 高さをしっかり固定 */
-    position: relative;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    max-width: 1100px;
+    height: 450px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* グラフが親要素からはみ出さないための設定 */
-canvas {
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* --- 5. 修正モード（履歴テーブル） --- */
-.edit-section {
-    background-color: #fff;
+/* 履歴・CSVエリア */
+#editSection {
+    max-width: 1100px;
+    margin: 20px auto;
     padding: 20px;
-    border: 1px solid #ccc;
-    margin-top: 20px;
-    animation: fadeIn 0.3s ease-in-out;
+    background: white;
+    border-radius: 8px;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.section-title {
-    font-size: 1rem;
-    color: #555;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 5px;
-    margin-top: 0;
-    margin-bottom: 15px;
-}
-
-.table-wrapper {
-    overflow-x: auto; /* スマホで表がはみ出ないように */
+textarea {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    margin-top: 10px;
 }
 
 th, td {
     border-bottom: 1px solid #eee;
-    padding: 12px 5px;
+    padding: 12px;
     text-align: center;
 }
 
-th {
-    background-color: #f9f9f9;
-    color: #777;
-    font-weight: normal;
-}
+th { background-color: #f9f9f9; }
 
 .delete-btn {
-    background-color: #cc0000;
-    color: #fff;
+    background-color: #e74c3c;
+    color: white;
     border: none;
     padding: 5px 10px;
     border-radius: 3px;
     cursor: pointer;
 }
 
-/* --- 6. モーダル（資材報告画面） --- */
+/* モーダル設定 */
 .modal {
     display: none;
     position: fixed;
-    z-index: 999;
+    z-index: 100;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
+    background-color: rgba(0,0,0,0.5);
 }
 
 .modal-content {
-    background-color: #f1ede4; /* 和紙風の白 */
+    background-color: white;
     margin: 10% auto;
+    padding: 25px;
     width: 90%;
     max-width: 400px;
-    border: 2px solid #555;
+    border-radius: 10px;
     position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.modal-title {
-    background-color: #444;
-    color: #fff;
-    padding: 10px 15px;
-    font-size: 1rem;
-    margin: 0;
 }
 
 .close-btn {
     position: absolute;
-    right: 15px;
-    top: 8px;
-    color: #fff;
-    font-size: 1.5rem;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
     cursor: pointer;
 }
 
-.modal-body {
-    padding: 20px;
-}
+.input-group { margin-bottom: 15px; }
+.input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+.input-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
 
-/* 入力グリッド */
 .input-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
 }
 
-.input-group {
-    margin-bottom: 15px;
-}
-
-label {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #666;
-    display: block;
-    margin-bottom: 5px;
-}
-
-input {
+.save-btn {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    color: #333;
+    padding: 12px;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 4px;
     font-size: 1rem;
-    box-sizing: border-box;
-}
-
-/* 決定ボタン（グラデーションでゲーム風に） */
-.record-btn {
-    width: 100%;
-    background: linear-gradient(to bottom, #e65c00, #b32025);
-    color: #fff;
-    border: 1px solid #8a1a1d;
-    padding: 15px;
-    font-size: 1rem;
-    font-weight: bold;
-    margin-top: 10px;
     cursor: pointer;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    margin-top: 10px;
 }
 
-.record-btn:active {
-    transform: translateY(2px);
-    box-shadow: none;
-}
+.save-btn:hover { background-color: #34495e; }
