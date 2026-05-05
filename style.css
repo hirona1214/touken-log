@@ -1,17 +1,16 @@
-/* 基本設定 */
 body {
-    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    font-family: "Helvetica Neue", Arial, sans-serif;
     background-color: #f4f1ea;
-    color: #333;
     margin: 0;
     padding: 0;
+    color: #333;
 }
 
-header {
+header, .sub-header {
     background-color: #2c3e50;
     color: white;
-    padding: 15px 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    padding: 10px 20px;
+    margin-bottom: 10px;
 }
 
 .header-container {
@@ -22,151 +21,66 @@ header {
     margin: 0 auto;
 }
 
-h1 { font-size: 1.2rem; margin: 0; }
+h1 { font-size: 1.1rem; }
 
-/* ボタン類：朱赤（#e74c3c）と配置の調整 */
-.header-btns {
-    display: flex;
-    align-items: center;
-}
-
-#openModalBtn { 
-    background-color: #27ae60; /* 画像に合わせる場合は緑(#27ae60)、以前の朱赤なら#e74c3c */
-    color: white; 
+/* 報告ボタンを朱赤に統一 */
+.btn-primary, .save-btn {
+    background-color: #e74c3c !important; /* 朱赤 */
+    color: white;
     border: none;
     padding: 8px 15px;
     border-radius: 4px;
     font-weight: bold;
     cursor: pointer;
-    margin-right: 10px;
 }
 
-/* 画像に合わせた「修正」「ログアウト」のスタイル */
-#editModeBtn {
+button:not(.btn-primary) {
     background-color: #7f8c8d;
     color: white;
     border: none;
     padding: 8px 15px;
     border-radius: 4px;
     cursor: pointer;
-    margin-right: 10px;
+    margin-left: 5px;
 }
 
-#loginBtn {
-    background-color: #ffffff;
-    color: #333;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-}
+#loginBtn { background-color: white; color: #333; }
 
-/* グラフエリア */
 .chart-container {
     background: white;
-    margin: 20px auto;
+    margin: 10px auto 30px;
     padding: 20px;
     max-width: 1100px;
-    height: 500px;
+    height: 350px;
     border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-/* モーダル：1行に並べるための設定 */
 .modal {
     display: none;
     position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
 }
 
 .modal-content {
-    background-color: white;
+    background: white;
     margin: 10% auto;
     padding: 30px;
-    width: 95%;
-    max-width: 900px; /* 横長に広げる */
+    width: 90%;
+    max-width: 900px;
     border-radius: 10px;
-    position: relative;
-}
-
-.close-btn {
-    position: absolute;
-    right: 20px;
-    top: 15px;
-    font-size: 28px;
-    cursor: pointer;
 }
 
 .input-row {
     display: flex;
     gap: 10px;
     align-items: flex-end;
-    margin-top: 20px;
 }
 
-.input-group {
-    flex: 1;
-}
+.input-group { flex: 1; }
+.input-group label { display: block; font-size: 12px; margin-bottom: 4px; }
+.input-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
 
-.input-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.input-group input {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.save-btn {
-    background-color: #e74c3c; /* 保存ボタンは朱赤 */
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-    height: 40px;
-}
-
-/* 履歴・インポートエリア */
-#editSection {
-    max-width: 1100px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-}
-
-.import-btn {
-    background-color: #27ae60;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; }
-th { background-color: #f9f9f9; }
-
-.delete-btn {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-}
+.close-btn { float: right; cursor: pointer; font-size: 24px; }
