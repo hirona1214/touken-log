@@ -1,7 +1,7 @@
 /* 基本設定 */
 body {
     font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
-    background-color: #f4f1ea; /* 本丸っぽい和紙のような色 */
+    background-color: #f4f1ea;
     color: #333;
     margin: 0;
     padding: 0;
@@ -10,7 +10,7 @@ body {
 header {
     background-color: #2c3e50;
     color: white;
-    padding: 10px 20px;
+    padding: 15px 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
@@ -24,18 +24,43 @@ header {
 
 h1 { font-size: 1.2rem; margin: 0; }
 
-.header-btns button {
-    margin-left: 10px;
-    padding: 8px 15px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
+/* ボタン類：朱赤（#e74c3c）と配置の調整 */
+.header-btns {
+    display: flex;
+    align-items: center;
 }
 
-#openModalBtn { background-color: #27ae60; color: white; }
-#editModeBtn { background-color: #7f8c8d; color: white; }
-#loginBtn { background-color: #ffffff; color: #333; }
+#openModalBtn { 
+    background-color: #27ae60; /* 画像に合わせる場合は緑(#27ae60)、以前の朱赤なら#e74c3c */
+    color: white; 
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+/* 画像に合わせた「修正」「ログアウト」のスタイル */
+#editModeBtn {
+    background-color: #7f8c8d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+#loginBtn {
+    background-color: #ffffff;
+    color: #333;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
 
 /* グラフエリア */
 .chart-container {
@@ -43,52 +68,12 @@ h1 { font-size: 1.2rem; margin: 0; }
     margin: 20px auto;
     padding: 20px;
     max-width: 1100px;
-    height: 450px;
+    height: 500px;
     border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* 履歴・CSVエリア */
-#editSection {
-    max-width: 1100px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-}
-
-textarea {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 14px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-th, td {
-    border-bottom: 1px solid #eee;
-    padding: 12px;
-    text-align: center;
-}
-
-th { background-color: #f9f9f9; }
-
-.delete-btn {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-/* モーダル設定 */
+/* モーダル：1行に並べるための設定 */
 .modal {
     display: none;
     position: fixed;
@@ -103,9 +88,9 @@ th { background-color: #f9f9f9; }
 .modal-content {
     background-color: white;
     margin: 10% auto;
-    padding: 25px;
-    width: 90%;
-    max-width: 400px;
+    padding: 30px;
+    width: 95%;
+    max-width: 900px; /* 横長に広げる */
     border-radius: 10px;
     position: relative;
 }
@@ -118,26 +103,70 @@ th { background-color: #f9f9f9; }
     cursor: pointer;
 }
 
-.input-group { margin-bottom: 15px; }
-.input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-.input-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+.input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-top: 20px;
+}
 
-.input-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
+.input-group {
+    flex: 1;
+}
+
+.input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 .save-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #2c3e50;
+    background-color: #e74c3c; /* 保存ボタンは朱赤 */
     color: white;
     border: none;
+    padding: 10px 20px;
     border-radius: 4px;
-    font-size: 1rem;
+    font-weight: bold;
     cursor: pointer;
-    margin-top: 10px;
+    height: 40px;
 }
 
-.save-btn:hover { background-color: #34495e; }
+/* 履歴・インポートエリア */
+#editSection {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+}
+
+.import-btn {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; }
+th { background-color: #f9f9f9; }
+
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
