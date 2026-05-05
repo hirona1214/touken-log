@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>資材管理本丸</title>
-    <link rel="stylesheet" href="css/style.css">
+    <!-- CSS読み込み（パスを修正） -->
+    <link rel="stylesheet" href="style.css">
+    
     <!-- Chart.js 本体 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- 日付を正しく扱うためのアダプター（グラフの比率修正に必要） -->
+    <!-- 日付アダプター（比率修正用） -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
@@ -29,8 +31,12 @@
             <canvas id="mainChart"></canvas>
         </div>
 
-        <!-- 履歴表示エリア（修正ボタンを押すと表示） -->
+        <!-- 履歴・CSVエリア -->
         <section id="editSection" style="display: none;">
+            <h3>CSVインポート</h3>
+            <textarea id="csvInput" placeholder="2026-04-20,60000,55000,40000,35000" style="width:100%; height:80px;"></textarea>
+            <button id="importBtn" style="margin-top:10px; margin-bottom:20px; background:#27ae60; color:white; padding:10px; border:none; cursor:pointer; border-radius:4px;">CSVからデータを取り込む</button>
+
             <h3>履歴管理</h3>
             <table id="historyTable">
                 <thead>
@@ -83,7 +89,7 @@
         </div>
     </div>
 
-    <!-- メイン処理 -->
-    <script type="module" src="js/main.js"></script>
+    <!-- JS読み込み（パスを修正） -->
+    <script type="module" src="main.js"></script>
 </body>
 </html>
