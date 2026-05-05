@@ -29,7 +29,8 @@ const editModeBtn = document.getElementById('editModeBtn');
 const editSection = document.getElementById('editSection');
 const historyBody = document.getElementById('historyBody');
 
-dateInput.value = new Date().toISOString().substr(0, 10);
+// 初期値設定
+if(dateInput) dateInput.value = new Date().toISOString().substr(0, 10);
 
 // モーダル制御
 openBtn.onclick = () => modal.style.display = "block";
@@ -51,24 +52,25 @@ editModeBtn.onclick = () => {
 saveBtn.addEventListener('click', async () => {
     const data = {
         date: dateInput.value,
-        charcoal: parseInt(charcoalInput.value),
-        steel: parseInt(steelInput.value),
-        coolant: parseInt(coolantInput.value),
-        whetstone: parseInt(whetstoneInput.value),
+        charcoal: parseInt(charcoalInput.value) || 0,
+        steel: parseInt(steelInput.value) || 0,
+        coolant: parseInt(coolantInput.value) || 0,
+        whetstone: parseInt(whetstoneInput.value) || 0,
         timestamp: new Date()
     };
 
-    if (!data.date || isNaN(data.charcoal)) return alert("入力を確認してください");
+    if (!data.date) return alert("日付を入力してください");
 
     try {
         await addDoc(collection(db, "resources"), data);
         alert("報告完了");
         modal.style.display = "none";
-    } catch (e) { alert("失敗"); }
+        charcoalInput.value = ""; steelInput.value = ""; 
+        coolantInput.value = ""; whetstoneInput.value = "";
+    } catch (e) { alert("保存に失敗しました"); }
 });
 
 // 取得・描画
-const ctx = document.getElementById('mainChart').getContext('2d');
 let myChart;
 const q = query(collection(db, "resources"), orderBy("date", "asc"));
 
@@ -95,11 +97,14 @@ onSnapshot(q, (snapshot) => {
 
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.onclick = async (e) => {
-            if (confirm("削除しますか？")) {
+            if (confirm("この記録を削除しますか？")) {
                 await deleteDoc(doc(db, "resources", e.target.dataset.id));
             }
         };
     });
+
+    const ctx = document.getElementById('mainChart');
+    if (!ctx) return;
 
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
@@ -107,12 +112,18 @@ onSnapshot(q, (snapshot) => {
         data: {
             labels: labels,
             datasets: [
-                { label: '木炭', data: cData, borderColor: '#e67e22', tension: 0.1 },
-                { label: '玉鋼', data: sData, borderColor: '#95a5a6', tension: 0.1 },
-                { label: '冷却', data: coData, borderColor: '#3498db', tension: 0.1 },
-                { label: '砥石', data: wData, borderColor: '#27ae60', tension: 0.1 }
+                { label: '木炭', data: cData, borderColor: '#e67e22', backgroundColor: '#e67e22', tension: 0.1 },
+                { label: '玉鋼', data: sData, borderColor: '#95a5a6', backgroundColor: '#95a5a6', tension: 0.1 },
+                { label: '冷却', data: coData, borderColor: '#3498db', backgroundColor: '#3498db', tension: 0.1 },
+                { label: '砥石', data: wData, borderColor: '#27ae60', backgroundColor: '#27ae60', tension: 0.1 }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
     });
 });
