@@ -1,7 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { GEMINI_API_KEY } from './config.js';
+// import { GEMINI_API_KEY } from './config.js';
+
+// import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@latest";
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.12.0";
+const API_KEY = "AIzaSyCiN_Cv7l4ekimnBTmyAemPOPoh5kHOXkk"; 
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 // --- Firebase 設定 ---
 const firebaseConfig = {
@@ -405,8 +410,6 @@ document.getElementById('filterType')?.addEventListener('change', updateToukenVi
 document.getElementById('filterRarity')?.addEventListener('change', updateToukenView);
 
 // --- AI（Gemini）連携設定 ---
-// APIキーを直接書いていた部分は削除して、インポートした変数を使う
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // 画像をAIが読める形式（Base64）に変換する補助関数
 async function fileToGenerativePart(file) {
@@ -431,7 +434,6 @@ window.handleImageUpload = async (input) => {
     try {
         // AIモデルの準備（画像認識に強いgemini-1.5-flashを使用）
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
         // AIへの指示（プロンプト）
         const prompt = `
             この画像から刀剣男士の名前とレベル(Lv)をすべて抽出してください。

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Gemini API 最小構成テスト</title>
+</head>
+<body>
+    <h1>Gemini API 疎通テスト</h1>
+    
+    <p>1. APIキーを下に貼り付けてください</p>
+    <input type="text" id="apiKey" placeholder="AIzaSy..." style="width: 400px;">
+    
+    <p>2. テスト送信（「こんにちは」と送ります）</p>
+    <button id="testBtn">AIに挨拶する</button>
+
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap;">
+        ここに結果が表示されます
+    </div>
+
+    <!-- ライブラリの読み込み -->
+    <script type="module">
+        document.getElementById('testBtn').onclick = async () => {
+            const key = document.getElementById('apiKey').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!key) return alert("APIキーを入力してください");
+            resultDiv.innerText = "通信中...";
+
+            // ライブラリを通さず、直接「v1」エンドポイントへ投げます
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "こんにちは！自己紹介してください。" }] }]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(`${data.error.code}: ${data.error.message}`);
+                }
+
+                resultDiv.innerText = "成功！AIからの返答：\n\n" + data.candidates[0].content.parts[0].text;
+            } catch (error) {
+                console.error(error);
+                resultDiv.innerText = "エラー発生：\n" + error.message;
+            }
+        };
+    </script>
+</body>
+</html>
