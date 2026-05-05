@@ -43,7 +43,7 @@ function loadMasterData() {
         snapshot.forEach(doc => {
             toukenMaster.push({ id: doc.id, ...doc.data() });
         });
-        renderMasterEditList(); // 名簿修正リストを更新
+        renderMasterEditList();
     });
 }
 
@@ -299,12 +299,20 @@ window.deleteLevelRecord = async (docId) => {
     await deleteDoc(doc(db, "users", auth.currentUser.uid, "touken", docId));
 };
 
+// ★ここを修正：リストをスクロール可能にするスタイルを追加
 function renderEditList() {
     const container = document.getElementById('levelEditList');
     if (!container) return;
     const sorted = [...rawToukenData].sort((a, b) => b.date.localeCompare(a.date));
+    
+    // 親要素に高さを制限してスクロールを許可するスタイルを設定
+    container.style.maxHeight = "450px";
+    container.style.overflowY = "auto";
+    container.style.border = "1px solid #eee";
+    container.style.padding = "5px";
+
     container.innerHTML = sorted.map(d => `
-        <div class="edit-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+        <div class="edit-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
             <span>${d.date} | <strong>${d.name}</strong> (Lv${d.lv})</span>
             <button onclick="deleteLevelRecord('${d.id}')" style="background:#b54434; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">削除</button>
         </div>
