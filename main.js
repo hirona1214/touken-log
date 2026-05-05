@@ -28,6 +28,7 @@ onAuthStateChanged(auth, (user) => {
     } else {
         document.getElementById('userInfo').innerText = "資材状況 (未ログイン)";
         document.getElementById('loginBtn').innerText = "Googleログイン";
+        document.querySelectorAll('.btn-primary').forEach(b => b.style.display = "none");
     }
 });
 
@@ -46,8 +47,6 @@ function loadData(uid, path, canvasId) {
             });
         });
         renderChart(canvasId, labels, datasets);
-    }, (error) => {
-        console.error("Firestore Error:", error);
     });
 }
 
@@ -65,53 +64,96 @@ function renderChart(id, labels, dataObj) {
         koban: '小判', requestTicket: '依頼札', helpTicket: '手伝札'
     };
 
-    const datasetArr = Object.keys(dataObj).map(key => ({
-        label: labelNames[key] || key,
-        data: dataObj[key],
-        borderColor: colors[key] || '#333',
-        backgroundColor: colors[key] || '#333',
-        tension: 0.1,
-        fill: false
-    }));
+    const datasetArr = Object.keys(dataObj).map(key => {
+        const isKoban = (key === 'koban');
+        return {
+            label: labelNames[key] || key,
+            data: dataObj[key],
+            borderColor: colors[key] || '#333',
+            backgroundColor: colors[key] || '#333',
+            tension: 0.1,
+            pointRadius: 4,
+            // 小判は左軸(y)、札系は右軸(y1)を使用
+            yAxisID: (id === 'itemChart') ? (isKoban ? 'y' : 'y1') : 'y'
+        };
+    });
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'MM/dd' } } },
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: id === 'itemChart' ? '小判' : '資材量' }
+            }
+        }
+    };
+
+    // 札・小判グラフの場合のみ右軸(y1)を追加
+    if (id === 'itemChart') {
+        chartOptions.scales.y1 = {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: { display: true, text: '依頼札・手伝札' },
+            grid: { drawOnChartArea: false } // グリッドが重なって見にくくなるのを防ぐ
+        };
+    }
 
     charts[id] = new Chart(ctx, {
         type: 'line',
         data: { labels, datasets: datasetArr },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
-            scales: { x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'MM/dd' } } } }
-        }
+        options: chartOptions
     });
 }
 
-async function saveData(path, fields, modalId) {
+// 保存ボタンのイベント
+document.getElementById('saveBtn').addEventListener('click', () => {
+    const fields = {
+        charcoal: "charcoal", steel: "steel", coolant: "coolant", whetstone: "whetstone"
+    };
+    execSave("resources", fields, "date", "inputModal");
+});
+
+document.getElementById('saveItemBtn').addEventListener('click', () => {
+    const fields = {
+        koban: "koban", requestTicket: "requestTicket", helpTicket: "helpTicket"
+    };
+    execSave("items", fields, "itemDate", "itemModal");
+});
+
+async function execSave(path, fields, dateInputId, modalId) {
     const user = auth.currentUser;
     if (!user) return alert("ログインしてください");
-    const dateId = modalId === "inputModal" ? "date" : "itemDate";
-    const dateVal = document.getElementById(dateId).value;
+    
+    const dateVal = document.getElementById(dateInputId).value;
     if (!dateVal) return alert("日付を入力してください");
 
     const data = { date: dateVal, timestamp: new Date() };
-    Object.keys(fields).forEach(k => data[k] = parseInt(document.getElementById(fields[k]).value) || 0);
+    for (let key in fields) {
+        data[key] = parseInt(document.getElementById(key).value) || 0;
+    }
     
     try {
         await addDoc(collection(db, "users", user.uid, path), data);
-        closeModal(modalId);
+        document.getElementById(modalId).style.display = 'none';
+        // フォームリセット
+        for (let key in fields) document.getElementById(key).value = "";
     } catch (e) {
-        alert("保存に失敗しました。ルールの設定を確認してください。");
+        alert("保存に失敗しました。");
     }
 }
 
-document.getElementById('saveBtn').onclick = () => saveData("resources", {
-    charcoal: "charcoal", steel: "steel", coolant: "coolant", whetstone: "whetstone"
-}, "inputModal");
-
-document.getElementById('saveItemBtn').onclick = () => saveData("items", {
-    koban: "koban", requestTicket: "requestTicket", helpTicket: "helpTicket"
-}, "itemModal");
-
-document.getElementById('openModalBtn').onclick = () => document.getElementById('inputModal').style.display = 'block';
-document.getElementById('openItemModalBtn').onclick = () => document.getElementById('itemModal').style.display = 'block';
+document.getElementById('openModalBtn').onclick = () => {
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('inputModal').style.display = 'block';
+};
+document.getElementById('openItemModalBtn').onclick = () => {
+    document.getElementById('itemDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('itemModal').style.display = 'block';
+};
 window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 document.getElementById('loginBtn').onclick = () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider);
