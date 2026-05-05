@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, signOut, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // --- 1. Firebase初期設定 ---
 const firebaseConfig = {
@@ -31,12 +31,20 @@ let unsubscribe = null;
 let myChart = null;
 
 // --- 3. 認証・ログイン管理 ---
+
+// リダイレクト後の結果処理
+getRedirectResult(auth).catch((error) => {
+    console.error("ログインエラー:", error);
+    alert("ログインに失敗しました。承認済みドメインの設定を確認してください。");
+});
+
+// ログイン状態の監視
 onAuthStateChanged(auth, (user) => {
     if (user) {
         userInfo.innerText = `${user.displayName} の本丸`;
         loginBtn.innerText = "ログアウト";
         openModalBtn.style.display = "block";
-        loadUserData(user.uid); // ログインユーザーのデータを読み込み
+        loadUserData(user.uid); 
     } else {
         userInfo.innerText = "閲覧制限中";
         loginBtn.innerText = "Googleログイン";
@@ -47,22 +55,18 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// ログイン・ログアウトボタン
 loginBtn.onclick = async () => {
     if (auth.currentUser) {
         if (confirm("ログアウトしますか？")) signOut(auth);
     } else {
-        try {
-            await signInWithPopup(auth, provider);
-        } catch (e) {
-            console.error(e);
-            alert("ログインに失敗しました。ポップアップがブロックされていないか確認してください。");
-        }
+        // ポップアップではなくリダイレクトを実行
+        signInWithRedirect(auth, provider);
     }
 };
 
 // --- 4. データ読み込み・リアルタイム更新 ---
 function loadUserData(uid) {
-    // ユーザー別のパス (users/UID/resources) を監視
     const q = query(collection(db, "users", uid, "resources"), orderBy("date", "asc"));
 
     if (unsubscribe) unsubscribe();
@@ -93,7 +97,6 @@ function loadUserData(uid) {
 
         renderChart(labels, cData, sData, coData, wData);
 
-        // 削除ボタンイベント
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 if (confirm("この記録を削除しますか？")) {
@@ -123,7 +126,6 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     try {
         await addDoc(collection(db, "users", user.uid, "resources"), data);
         modal.style.display = "none";
-        // 入力フォームクリア
         ['charcoal','steel','coolant','whetstone'].forEach(id => document.getElementById(id).value = "");
     } catch (e) { 
         console.error(e);
@@ -156,7 +158,7 @@ function renderChart(labels, cData, sData, coData, wData) {
     });
 }
 
-// --- 7. UI制御（モーダル・修正モード） ---
+// --- 7. UI制御 ---
 if(document.getElementById('date')) {
     document.getElementById('date').value = new Date().toISOString().substr(0, 10);
 }
