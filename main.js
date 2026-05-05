@@ -16,18 +16,18 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // 要素取得
-const dateInput = document.getElementById('date');
-const charcoalInput = document.getElementById('charcoal');
-const steelInput = document.getElementById('steel');
-const coolantInput = document.getElementById('coolant');
-const whetstoneInput = document.getElementById('whetstone');
-const saveBtn = document.getElementById('saveBtn');
-const modal = document.getElementById("inputModal");
-const openBtn = document.getElementById("openModalBtn");
-const closeBtn = document.querySelector(".close-btn");
-const editModeBtn = document.getElementById('editModeBtn');
-const editSection = document.getElementById('editSection');
-const historyBody = document.getElementById('historyBody');
+const dateInput = docSnap.getElementById('date');
+const charcoalInput = docSnap.getElementById('charcoal');
+const steelInput = docSnap.getElementById('steel');
+const coolantInput = docSnap.getElementById('coolant');
+const whetstoneInput = docSnap.getElementById('whetstone');
+const saveBtn = docSnap.getElementById('saveBtn');
+const modal = docSnap.getElementById("inputModal");
+const openBtn = docSnap.getElementById("openModalBtn");
+const closeBtn = docSnap.querySelector(".close-btn");
+const editModeBtn = docSnap.getElementById('editModeBtn');
+const editSection = docSnap.getElementById('editSection');
+const historyBody = docSnap.getElementById('historyBody');
 
 // 初期値設定
 if(dateInput) dateInput.value = new Date().toISOString().substr(0, 10);
@@ -78,14 +78,14 @@ onSnapshot(q, (snapshot) => {
     const labels = [], cData = [], sData = [], coData = [], wData = [];
     historyBody.innerHTML = "";
 
-    snapshot.forEach((document) => {
-        const d = document.data();
-        const id = document.id;
+    snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+        const id = docSnap.id;
         labels.push(d.date);
         cData.push(d.charcoal); sData.push(d.steel);
         coData.push(d.coolant || 0); wData.push(d.whetstone || 0);
 
-        const tr = document.createElement('tr');
+        const tr = docSnap.createElement('tr');
         tr.innerHTML = `
             <td>${d.date.slice(5)}</td>
             <td>${d.charcoal}</td><td>${d.steel}</td>
@@ -95,7 +95,7 @@ onSnapshot(q, (snapshot) => {
         historyBody.appendChild(tr);
     });
 
-    document.querySelectorAll('.delete-btn').forEach(btn => {
+    docSnap.querySelectorAll('.delete-btn').forEach(btn => {
         btn.onclick = async (e) => {
             if (confirm("この記録を削除しますか？")) {
                 await deleteDoc(doc(db, "resources", e.target.dataset.id));
@@ -103,7 +103,7 @@ onSnapshot(q, (snapshot) => {
         };
     });
 
-    const ctx = document.getElementById('mainChart');
+    const ctx = docSnap.getElementById('mainChart');
     if (!ctx) return;
 
     if (myChart) myChart.destroy();
