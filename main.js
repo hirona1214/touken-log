@@ -26,7 +26,6 @@ const modal = document.getElementById("inputModal");
 let unsubscribe = null; 
 let myChart = null;
 
-// ログイン状態の監視
 onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("【成功】ログイン検知:", user.displayName);
@@ -35,7 +34,6 @@ onAuthStateChanged(auth, (user) => {
         if (openModalBtn) openModalBtn.style.display = "block";
         loadUserData(user.uid); 
     } else {
-        console.log("【状態】未ログイン");
         userInfo.innerText = "閲覧制限中";
         loginBtn.innerText = "Googleログイン";
         if (openModalBtn) openModalBtn.style.display = "none";
@@ -45,26 +43,20 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// ポップアップ方式でのログイン
 loginBtn.onclick = async () => {
     if (auth.currentUser) {
         if (confirm("ログアウトしますか？")) signOut(auth);
     } else {
         try {
-            console.log("ポップアップを開始します...");
             await signInWithPopup(auth, provider);
         } catch (error) {
             console.error("ログインエラー:", error);
-            if (error.code === 'auth/popup-blocked') {
-                alert("ポップアップがブロックされました。ブラウザの設定で許可してください。");
-            } else if (error.code === 'auth/unauthorized-domain') {
-                alert("ドメイン未承認です。Firebaseコンソールを確認してください。");
-            }
         }
     }
 };
 
 function loadUserData(uid) {
+    // 日付順で取得
     const q = query(collection(db, "users", uid, "resources"), orderBy("date", "asc"));
     if (unsubscribe) unsubscribe();
     unsubscribe = onSnapshot(q, (snapshot) => {
@@ -85,6 +77,8 @@ function loadUserData(uid) {
                 if (confirm("削除しますか？")) await deleteDoc(doc(db, "users", uid, "resources", e.target.dataset.id));
             };
         });
+    }, (error) => {
+        console.error("Firestoreエラー:", error);
     });
 }
 
@@ -103,7 +97,19 @@ function renderChart(labels, cData, sData, coData, wData) {
                 { label: '砥石', data: wData, borderColor: '#27ae60', backgroundColor: '#27ae60', tension: 0.1 }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time', // 時間軸を有効化
+                    time: {
+                        unit: 'day',
+                        displayFormats: { day: 'MM/dd' }
+                    }
+                }
+            }
+        }
     });
 }
 
@@ -124,13 +130,10 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     } catch (e) { alert("保存失敗"); }
 });
 
-// UI制御
-if(document.getElementById('date')) document.getElementById('date').value = new Date().toISOString().substr(0, 10);
-openModalBtn.onclick = () => modal.style.display = "block";
-document.querySelector(".close-btn").onclick = () => modal.style.display = "none";
 const editModeBtn = document.getElementById('editModeBtn');
 const editSection = document.getElementById('editSection');
 editModeBtn.onclick = () => {
     editSection.style.display = editSection.style.display === "none" ? "block" : "none";
     editModeBtn.innerText = editSection.style.display === "none" ? "修正" : "閉じる";
 };
+document.querySelector(".close-btn").onclick = () => modal.style.display = "none";
