@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HONMARU Asset Management</title>
+    
+    <!-- CSSファイルを読み込む -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- グラフ用ライブラリ (これだけはネットから拝借) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Log System</h1>
+    </header>
+
+    <main>
+        <!-- 入力エリア -->
+        <section class="input-section">
+            <div class="field">
+                <label>DATE</label>
+                <input type="date" id="date">
+            </div>
+            
+            <div class="field">
+                <label>CHARCOAL (木炭)</label>
+                <input type="number" id="charcoal" placeholder="0">
+            </div>
+            
+            <div class="field">
+                <label>STEEL (玉鋼)</label>
+                <input type="number" id="steel" placeholder="0">
+            </div>
+            
+            <button id="saveBtn">RECORD TO CLOUD</button>
+        </section>
+
+        <!-- 表示エリア -->
+        <section class="display-section">
+            <div class="chart-container">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- JavaScriptファイルを読み込む (type="module"が重要) -->
+<script type="module" src="main.js"></script>
+
+</body>
+</html>

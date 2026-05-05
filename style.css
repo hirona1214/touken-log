@@ -1,0 +1,116 @@
+/* --- 変数の設定 (色の管理が楽になります) --- */
+:root {
+    --bg-color: #0a0a0a;       /* 真っ黒に近い背景 */
+    --card-bg: #141414;        /* カード部分の背景 */
+    --accent-color: #ffffff;   /* アクセントは白 */
+    --text-main: #e0e0e0;      /* メインの文字色 */
+    --text-sub: #666666;       /* 補足の文字色 */
+    --border-color: #262626;   /* 境界線 */
+    --input-bg: #1a1a1a;       /* 入力欄の背景 */
+}
+
+/* --- 全体のリセット --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 480px; /* スマホで見やすい幅に制限 */
+}
+
+/* --- ヘッダー --- */
+header h1 {
+    font-size: 0.9rem;
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+/* --- 入力セクション --- */
+.input-section {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+.field {
+    margin-bottom: 25px;
+}
+
+label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--accent-color);
+    padding: 12px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+input:focus {
+    border-color: var(--accent-color);
+}
+
+/* カレンダーアイコンなどの色を調整 (ブラウザによる) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+/* --- ボタン --- */
+button {
+    width: 100%;
+    background-color: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 16px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+/* --- グラフセクション --- */
+.display-section {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.chart-container {
+    width: 100%;
+    position: relative;
+}

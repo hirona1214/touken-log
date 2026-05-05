@@ -1,0 +1,9 @@
+  const firebaseConfig = {
+    apiKey: "AIzaSyC32tKkWQTDZrxM2rypST5KIMINI5wFzVc",
+    authDomain: "touken-manager.firebaseapp.com",
+    projectId: "touken-manager",
+    storageBucket: "touken-manager.firebasestorage.app",
+    messagingSenderId: "628627612862",
+    appId: "1:628627612862:web:c06b91f4fc656064472aef",
+    measurementId: "G-942WCG4VMM"
+  };
