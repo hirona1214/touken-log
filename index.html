@@ -3,124 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>本丸管理システム</title>
+    <title>本丸資材・育成管理システム</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
-
-    <header class="main-header">
-        <div class="header-inner">
-            <div class="main-title">
-                <h1>本丸管理</h1>
-                <span id="userInfo" class="user-name"></span>
-            </div>
-            <nav class="tab-menu">
-                <button class="tab-btn active" onclick="switchTab('resource-tab')">資材・小判</button>
-                <button class="tab-btn" onclick="switchTab('touken-tab')">刀剣育成</button>
-            </nav>
-            <div class="auth-area">
-                <button id="loginBtn" class="mini-btn">ログイン</button>
-            </div>
-        </div>
+    <header>
+        <div id="userInfo">(未ログイン)</div>
+        <button id="loginBtn" class="btn-auth">ログイン</button>
     </header>
 
-    <main>
-        <!-- 資材・小判タブ -->
-        <div id="resource-tab" class="tab-content active">
-            <section class="kanban-section">
-                <div class="section-header">
-                    <div class="section-tag green">資材状況</div>
-                    <div class="btn-group">
-                        <button id="openModalBtn" class="btn-action red">＋報告</button>
-                        <button onclick="toggleEdit()" class="btn-action black">修正</button>
-                    </div>
-                </div>
-                <div class="chart-container"><canvas id="mainChart"></canvas></div>
-            </section>
+    <nav class="tab-menu">
+        <button class="tab-btn active" onclick="switchTab('resourceTab')">資材管理</button>
+        <button class="tab-btn" onclick="switchTab('toukenTab')">刀剣育成</button>
+    </nav>
 
-            <section class="kanban-section">
-                <div class="section-header">
-                    <div class="section-tag green">札・小判</div>
-                    <div class="btn-group">
-                        <button id="openItemModalBtn" class="btn-action red">＋報告</button>
-                    </div>
-                </div>
-                <div class="chart-container"><canvas id="itemChart"></canvas></div>
-            </section>
-        </div>
+    <main>
+        <!-- 資材管理タブ -->
+        <section id="resourceTab" class="tab-content active">
+            <div class="btn-group">
+                <button id="openModalBtn" class="btn-action red">＋資材登録</button>
+                <button id="openItemModalBtn" class="btn-action black">＋小判・札登録</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="mainChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="itemChart"></canvas>
+            </div>
+        </section>
 
         <!-- 刀剣育成タブ -->
-        <div id="touken-tab" class="tab-content">
-            <section class="kanban-section">
-                <div class="section-header">
-                    <div class="section-tag green">レベル推移</div>
-                    <div class="filter-group">
-                        <select id="filterType">
-                            <option value="all">刀種：すべて</option>
-                            <option value="短刀">短刀</option>
-                            <option value="脇差">脇差</option>
-                            <option value="打刀">打刀</option>
-                            <option value="太刀">太刀</option>
-                            <option value="大太刀">大太刀</option>
-                            <option value="槍">槍</option>
-                            <option value="薙刀">薙刀</option>
-                        </select>
-                        <select id="filterRarity">
-                            <option value="all">レア度：すべて</option>
-                            <option value="5">五</option>
-                            <option value="4">四</option>
-                            <option value="3">三</option>
-                            <option value="2">二</option>
-                            <option value="1">一</option>
-                        </select>
-                    </div>
-                    <!-- 刀剣育成タブ内のボタン -->
-                    <div class="btn-group">
-                        <button id="openLevelModalBtn" class="btn-action red">＋レベル登録</button> 
-                    </div>
-                <div class="chart-container"><canvas id="levelChart"></canvas></div>
-            </section>
+        <section id="toukenTab" class="tab-content">
+            <div class="btn-group">
+                <button id="openMasterModalBtn" class="btn-action black">＋刀剣(極)登録</button>
+                <button id="openLevelModalBtn" class="btn-action red">＋レベル登録</button>
+                <button id="openLevelEditBtn" class="btn-action black">修正</button>
+            </div>
 
-            <!-- 成長TOP10セクション -->
-            <section class="kanban-section">
-                <div class="section-tag black">近侍選抜：直近1ヶ月の成長TOP10</div>
-                <div class="ranking-container">
-                    <div id="rankingList" class="ranking-list">
-                        <!-- ここに名前が並ぶ -->
-                    </div>
-                    <div class="ranking-chart">
-                        <canvas id="top10Chart"></canvas>
-                    </div>
+            <div class="filter-group">
+                <select id="filterType">
+                    <option value="all">すべての刀種</option>
+                    <option value="短刀(極)">短刀(極)</option>
+                    <option value="打刀(極)">打刀(極)</option>
+                    <option value="太刀(極)">太刀(極)</option>
+                    <option value="短刀">短刀</option>
+                    <option value="打刀">打刀</option>
+                    <option value="太刀">太刀</option>
+                </select>
+                <select id="filterRarity">
+                    <option value="all">すべてのレア度</option>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option>
+                </select>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="levelChart"></canvas>
+            </div>
+
+            <div class="ranking-section">
+                <h3>直近30日の成長TOP10</h3>
+                <div id="rankingList"></div>
+                <div class="chart-container-sm">
+                    <canvas id="top10Chart"></canvas>
                 </div>
-            </section>
-        </div>
+            </div>
+        </section>
     </main>
 
-    <!-- レベル登録モーダル -->
+    <!-- モーダル：レベル登録 -->
     <div id="levelModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('levelModal')">&times;</span>
-            <h2 class="modal-title">刀剣レベル登録</h2>
-            <div class="input-row">
-                <div class="input-group"><label>日付</label><input type="date" id="lvDate"></div>
-                <div class="input-group"><label>刀剣名</label><input type="text" id="tkName" placeholder="三日月宗近"></div>
-                <div class="input-group"><label>刀種</label>
-                    <select id="tkType">
-                        <option value="短刀">短刀</option><option value="脇差">脇差</option>
+            <h2>刀剣レベル登録</h2>
+            <input type="date" id="lvDate" class="input-date">
+            <div id="levelInputContainer">
+                <div class="input-row">
+                    <select id="type_1" onchange="updateRarityOptions(1)">
+                        <option value="">刀種</option>
+                        <option value="短刀(極)">短刀(極)</option><option value="打刀(極)">打刀(極)</option>
+                        <option value="太刀(極)">太刀(極)</option><option value="短刀">短刀</option>
                         <option value="打刀">打刀</option><option value="太刀">太刀</option>
-                        <option value="大太刀">大太刀</option><option value="槍">槍</option><option value="薙刀">薙刀</option>
                     </select>
+                    <select id="rarity_1" onchange="updateNameOptions(1)"><option>レア度</option></select>
+                    <select id="name_1"><option>名前</option></select>
+                    <input type="number" id="lv_1" placeholder="Lv">
                 </div>
-                <div class="input-group"><label>レア度</label><input type="number" id="tkRarity" min="1" max="5" value="3"></div>
-                <div class="input-group"><label>レベル</label><input type="number" id="tkLv" min="1" max="99"></div>
-                <button id="saveLevelBtn" class="btn-save">登録</button>
             </div>
+            <button id="addRowBtn" class="btn-sub">＋行を追加</button>
+            <button id="saveLevelBtn" class="btn-save">一括登録</button>
         </div>
     </div>
 
-    <!-- 既存の資材・小判モーダルは省略（構造は同じ） -->
+    <!-- モーダル：刀剣(極)名簿登録 -->
+    <div id="masterModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('masterModal')">&times;</span>
+            <h2>名簿に新規追加</h2>
+            <input type="text" id="newMasterName" placeholder="刀剣男士の名前">
+            <select id="newMasterType">
+                <option value="短刀(極)">短刀(極)</option><option value="打刀(極)">打刀(極)</option>
+                <option value="太刀(極)">太刀(極)</option><option value="短刀">短刀</option>
+                <option value="打刀">打刀</option><option value="太刀">太刀</option>
+            </select>
+            <input type="number" id="newMasterRarity" placeholder="レア度(1-5)" min="1" max="5">
+            <button id="saveMasterBtn" class="btn-save">名簿に登録</button>
+        </div>
+    </div>
+
+    <!-- モーダル：修正 -->
+    <div id="levelEditSection" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('levelEditSection')">&times;</span>
+            <h2>レベル記録の修正</h2>
+            <div id="levelEditList"></div>
+        </div>
+    </div>
 
     <script type="module" src="main.js"></script>
 </body>

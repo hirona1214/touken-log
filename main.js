@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// --- Firebase 設定 ---
 const firebaseConfig = {
     apiKey: "AIzaSyC32tKkWQTDZrxM2rypST5KIMINI5wFzVc",
     authDomain: "touken-manager.firebaseapp.com",
@@ -18,6 +19,7 @@ const provider = new GoogleAuthProvider();
 
 let charts = {};
 let rawToukenData = [];
+let toukenMaster = [];
 
 // --- 認証状態の監視 ---
 onAuthStateChanged(auth, (user) => {
@@ -26,21 +28,35 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById('loginBtn').innerText = "ログアウト";
         loadResourceData(user.uid);
         loadToukenData(user.uid);
+        loadMasterData();
     } else {
         document.getElementById('userInfo').innerText = "(未ログイン)";
         document.getElementById('loginBtn').innerText = "ログイン";
     }
 });
 
-// --- タブ切り替え ---
-window.switchTab = (tabId) => {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    if (event) event.currentTarget.classList.add('active');
-};
+// --- マスターデータ（名簿）読み込み ---
+function loadMasterData() {
+    onSnapshot(collection(db, "touken_master"), (snapshot) => {
+        toukenMaster = [];
+        snapshot.forEach(doc => toukenMaster.push(doc.data()));
+    });
+}
 
-// --- 資材データの読み込み ---
+// --- 刀剣レベルデータ読み込み ---
+function loadToukenData(uid) {
+    const q = query(collection(db, "users", uid, "touken"), orderBy("date", "asc"));
+    onSnapshot(q, (snapshot) => {
+        rawToukenData = [];
+        snapshot.forEach(doc => {
+            rawToukenData.push({ id: doc.id, ...doc.data() });
+        });
+        updateToukenView();
+        renderEditList();
+    });
+}
+
+// --- 資材・アイテムデータ読み込み ---
 function loadResourceData(uid) {
     onSnapshot(query(collection(db, "users", uid, "resources"), orderBy("date", "asc")), (snapshot) => {
         const labels = [];
@@ -70,22 +86,122 @@ function loadResourceData(uid) {
     });
 }
 
-// --- 刀剣データの読み込み ---
-function loadToukenData(uid) {
-    const q = query(collection(db, "users", uid, "touken"), orderBy("date", "asc"));
-    onSnapshot(q, (snapshot) => {
-        rawToukenData = [];
-        snapshot.forEach(doc => rawToukenData.push(doc.data()));
-        updateToukenView();
-    });
+// --- タブ切り替え ---
+window.switchTab = (tabId) => {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    if (event) event.currentTarget.classList.add('active');
+};
+
+// --- 連動プルダウン ---
+window.updateRarityOptions = (rowIdx) => {
+    const type = document.getElementById(`type_${rowIdx}`).value;
+    const raritySelect = document.getElementById(`rarity_${rowIdx}`);
+    const nameSelect = document.getElementById(`name_${rowIdx}`);
+    
+    const rarities = [...new Set(toukenMaster.filter(t => t.type === type).map(t => t.rarity))].sort();
+    raritySelect.innerHTML = '<option value="">レア度</option>' + rarities.map(r => `<option value="${r}">${r}</option>`).join('');
+    nameSelect.innerHTML = '<option value="">名前</option>';
+};
+
+window.updateNameOptions = (rowIdx) => {
+    const type = document.getElementById(`type_${rowIdx}`).value;
+    const rarity = document.getElementById(`rarity_${rowIdx}`).value;
+    const nameSelect = document.getElementById(`name_${rowIdx}`);
+    
+    const names = toukenMaster.filter(t => t.type === type && t.rarity == rarity).map(t => t.name);
+    nameSelect.innerHTML = '<option value="">名前選択</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
+};
+
+// --- 入力行追加 (最大6) ---
+let rowCount = 1;
+window.addInputRow = () => {
+    if (rowCount >= 6) return alert("一度に登録できるのは6振りまでです");
+    rowCount++;
+    const container = document.getElementById('levelInputContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'input-row border-top pt-2 mt-2';
+    newRow.innerHTML = `
+        <select id="type_${rowCount}" onchange="updateRarityOptions(${rowCount})">
+            <option value="">刀種</option>
+            <option value="短刀(極)">短刀(極)</option><option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
+            <option value="短刀">短刀</option><option value="打刀">打刀</option><option value="太刀">太刀</option>
+        </select>
+        <select id="rarity_${rowCount}" onchange="updateNameOptions(${rowCount})"><option>レア度</option></select>
+        <select id="name_${rowCount}"><option>名前</option></select>
+        <input type="number" id="lv_${rowCount}" placeholder="Lv">
+    `;
+    container.appendChild(newRow);
+};
+
+// --- 修正（削除）リストの表示 ---
+function renderEditList() {
+    const container = document.getElementById('levelEditList');
+    if (!container) return;
+    const sorted = [...rawToukenData].sort((a, b) => b.date.localeCompare(a.date));
+    container.innerHTML = sorted.map(d => `
+        <div class="edit-item" style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
+            <span>${d.date} | <strong>${d.name}</strong> (Lv${d.lv})</span>
+            <button onclick="deleteLevelRecord('${d.id}')" style="background:#b54434; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;">削除</button>
+        </div>
+    `).join('');
 }
 
-// フィルターイベント
-const filterType = document.getElementById('filterType');
-const filterRarity = document.getElementById('filterRarity');
-if(filterType) filterType.addEventListener('change', updateToukenView);
-if(filterRarity) filterRarity.addEventListener('change', updateToukenView);
+window.deleteLevelRecord = async (docId) => {
+    if (!confirm("このレベル記録を削除しますか？")) return;
+    try {
+        await deleteDoc(doc(db, "users", auth.currentUser.uid, "touken", docId));
+    } catch (e) { alert("削除に失敗しました"); }
+};
 
+// --- 保存処理 ---
+async function saveMasterEntry() {
+    const name = document.getElementById('newMasterName').value;
+    const type = document.getElementById('newMasterType').value;
+    const rarity = parseInt(document.getElementById('newMasterRarity').value);
+    if (!name || !type || !rarity) return alert("全項目入力してください");
+    await addDoc(collection(db, "touken_master"), { name, type, rarity });
+    alert("名簿に登録しました");
+    closeModal('masterModal');
+}
+
+async function saveAllLevels() {
+    const user = auth.currentUser;
+    const dateVal = document.getElementById('lvDate').value;
+    if (!user || !dateVal) return alert("日付を確認してください");
+    try {
+        for (let i = 1; i <= rowCount; i++) {
+            const name = document.getElementById(`name_${i}`).value;
+            const lv = parseInt(document.getElementById(`lv_${i}`).value);
+            const type = document.getElementById(`type_${i}`).value;
+            const rarity = parseInt(document.getElementById(`rarity_${i}`).value);
+            if (name && lv) {
+                await addDoc(collection(db, "users", user.uid, "touken"), {
+                    date: dateVal, name, lv, type, rarity, timestamp: new Date()
+                });
+            }
+        }
+        alert("登録完了しました");
+        closeModal('levelModal');
+        rowCount = 1;
+        document.getElementById('levelInputContainer').innerHTML = `
+            <div class="input-row">
+                <select id="type_1" onchange="updateRarityOptions(1)">
+                    <option value="">刀種</option>
+                    <option value="短刀(極)">短刀(極)</option><option value="打刀(極)">打刀(極)</option>
+                    <option value="太刀(極)">太刀(極)</option><option value="短刀">短刀</option>
+                    <option value="打刀">打刀</option><option value="太刀">太刀</option>
+                </select>
+                <select id="rarity_1" onchange="updateNameOptions(1)"><option>レア度</option></select>
+                <select id="name_1"><option>名前</option></select>
+                <input type="number" id="lv_1" placeholder="Lv">
+            </div>
+        `;
+    } catch (e) { alert("保存に失敗しました"); }
+}
+
+// --- グラフ表示更新 ---
 function updateToukenView() {
     const typeFilter = document.getElementById('filterType')?.value || 'all';
     const rarityFilter = document.getElementById('filterRarity')?.value || 'all';
@@ -111,24 +227,21 @@ function updateToukenView() {
     calculateGrowthRanking();
 }
 
-// --- 成長ランキング計算 ---
+// --- ランキング計算 ---
 function calculateGrowthRanking() {
-    const now = new Date();
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
 
     const swordStats = {};
     rawToukenData.forEach(d => {
         if (!swordStats[d.name]) swordStats[d.name] = { minLv: null, maxLv: null, minDate: '', maxDate: '', history: [] };
-        if (d.date >= thirtyDaysAgoStr) {
+        if (d.date >= dateLimit) {
             if (swordStats[d.name].minLv === null || d.date < swordStats[d.name].minDate) {
-                swordStats[d.name].minLv = d.lv;
-                swordStats[d.name].minDate = d.date;
+                swordStats[d.name].minLv = d.lv; swordStats[d.name].minDate = d.date;
             }
             if (swordStats[d.name].maxLv === null || d.date > swordStats[d.name].maxDate) {
-                swordStats[d.name].maxLv = d.lv;
-                swordStats[d.name].maxDate = d.date;
+                swordStats[d.name].maxLv = d.lv; swordStats[d.name].maxDate = d.date;
             }
             swordStats[d.name].history.push({ x: d.date, y: d.lv });
         }
@@ -136,13 +249,12 @@ function calculateGrowthRanking() {
 
     const ranking = Object.keys(swordStats)
         .map(name => ({
-            name: name,
+            name,
             growth: swordStats[name].maxLv - swordStats[name].minLv,
             history: swordStats[name].history.sort((a,b) => a.x.localeCompare(b.x))
         }))
         .filter(item => item.growth > 0)
-        .sort((a, b) => b.growth - a.growth)
-        .slice(0, 10);
+        .sort((a, b) => b.growth - a.growth).slice(0, 10);
 
     const rankingList = document.getElementById('rankingList');
     if (rankingList) {
@@ -152,15 +264,12 @@ function calculateGrowthRanking() {
     }
 
     const top10Datasets = ranking.map(tk => ({
-        label: tk.name,
-        data: tk.history,
-        borderColor: stringToColor(tk.name),
-        tension: 0.1
+        label: tk.name, data: tk.history, borderColor: stringToColor(tk.name), tension: 0.1
     }));
     renderToukenChart('top10Chart', top10Datasets);
 }
 
-// --- グラフ描画 ---
+// --- Chart.js 描画関数 ---
 function renderChart(id, labels, dataObj) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
@@ -194,44 +303,29 @@ function renderToukenChart(id, datasets) {
     });
 }
 
-// --- 保存処理 ---
-async function saveData(path, fields, dateId, modalId) {
-    const user = auth.currentUser;
-    if (!user) return alert("ログインしてください");
-    const dateVal = document.getElementById(dateId).value;
-    const data = { date: dateVal, timestamp: new Date() };
-    for (let key in fields) {
-        const el = document.getElementById(fields[key]);
-        data[key] = el.type === 'number' ? parseInt(el.value) || 0 : el.value;
-    }
-    await addDoc(collection(db, "users", user.uid, path), data);
-    closeModal(modalId);
-}
-
-// ボタンのクリックイベント（要素が存在する場合のみ設定）
-const bindClick = (id, fn) => {
-    const el = document.getElementById(id);
-    if (el) el.onclick = fn;
-};
-
-bindClick('saveBtn', () => saveData("resources", { charcoal: "charcoal", steel: "steel", coolant: "coolant", whetstone: "whetstone" }, "date", "inputModal"));
-bindClick('saveItemBtn', () => saveData("items", { koban: "koban", requestTicket: "requestTicket", helpTicket: "helpTicket" }, "itemDate", "itemModal"));
-bindClick('saveLevelBtn', () => saveData("touken", { name: "tkName", type: "tkType", rarity: "tkRarity", lv: "tkLv" }, "lvDate", "levelModal"));
-
-bindClick('openModalBtn', () => { document.getElementById('date').value = new Date().toISOString().split('T')[0]; document.getElementById('inputModal').style.display = 'block'; });
-bindClick('openItemModalBtn', () => { document.getElementById('itemDate').value = new Date().toISOString().split('T')[0]; document.getElementById('itemModal').style.display = 'block'; });
-bindClick('openLevelModalBtn', () => { document.getElementById('lvDate').value = new Date().toISOString().split('T')[0]; document.getElementById('levelModal').style.display = 'block'; });
-
-window.closeModal = (id) => { const m = document.getElementById(id); if(m) m.style.display = 'none'; };
-bindClick('loginBtn', () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider));
-
+// --- ヘルパー ---
 function stringToColor(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
     let color = '#';
-    for (let i = 0; i < 3; i++) {
-        let value = (hash >> (i * 8)) & 0xFF;
-        color += ('00' + value.toString(16)).substr(-2);
-    }
+    for (let i = 0; i < 3; i++) color += ('00' + ((hash >> (i * 8)) & 0xFF).toString(16)).substr(-2);
     return color;
 }
+
+window.closeModal = (id) => { const m = document.getElementById(id); if(m) m.style.display = 'none'; };
+
+// --- イベントバインド ---
+const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+
+bindClick('saveMasterBtn', saveMasterEntry);
+bindClick('saveLevelBtn', saveAllLevels);
+bindClick('addRowBtn', window.addInputRow);
+bindClick('openLevelModalBtn', () => { document.getElementById('lvDate').value = new Date().toISOString().split('T')[0]; document.getElementById('levelModal').style.display = 'block'; });
+bindClick('openMasterModalBtn', () => { document.getElementById('masterModal').style.display = 'block'; });
+bindClick('openLevelEditBtn', () => { document.getElementById('levelEditSection').style.display = 'block'; });
+bindClick('loginBtn', () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider));
+
+const filterType = document.getElementById('filterType');
+const filterRarity = document.getElementById('filterRarity');
+if(filterType) filterType.addEventListener('change', updateToukenView);
+if(filterRarity) filterRarity.addEventListener('change', updateToukenView);
