@@ -24,61 +24,70 @@ const userInfo = document.getElementById('userInfo');
 const openModalBtn = document.getElementById('openModalBtn');
 const historyBody = document.getElementById('historyBody');
 const modal = document.getElementById("inputModal");
+const editModeBtn = document.getElementById('editModeBtn');
+const editSection = document.getElementById('editSection');
 
 let unsubscribe = null; 
 let myChart = null;
 
-// --- 3. 認証・ログイン管理（デバッグ強化版） ---
+console.log("【チェック】JS読み込み開始");
 
-console.log("【チェック】JS読み込み完了");
+// --- 3. 認証・ログイン管理（リダイレクト待機強化版） ---
 
-// ログイン画面から戻ってきた時の処理
-getRedirectResult(auth).then((result) => {
-    if (result?.user) {
-        console.log("【チェック】リダイレクト成功:", result.user.displayName);
+// A. ページ読み込み時にリダイレクト結果を最優先でチェック
+async function initAuth() {
+    try {
+        console.log("【チェック】リダイレクト結果を確認中...");
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+            console.log("【チェック】リダイレクトからのログイン成功:", result.user.displayName);
+        }
+    } catch (error) {
+        console.error("【エラー】リダイレクト処理失敗:", error.code, error.message);
+        if (error.code === 'auth/unauthorized-domain') {
+            alert("ドメインが許可されていません。Firebase設定を再確認してください。");
+        }
     }
-}).catch((error) => {
-    console.error("【エラー】リダイレクト失敗:", error);
-    alert("ログインに失敗しました。コンソールを確認してください。");
-});
+}
 
-// ログイン状態が変わった時の監視
+// B. ログイン状態の監視
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        console.log("【チェック】ログイン済みです！ UID:", user.uid);
+        console.log("【チェック】ログイン検知！ UID:", user.uid);
         userInfo.innerText = `${user.displayName} の本丸`;
         loginBtn.innerText = "ログアウト";
-        openModalBtn.style.display = "block";
+        if (openModalBtn) openModalBtn.style.display = "block";
         loadUserData(user.uid); 
     } else {
-        console.log("【チェック】ログインしていません（閲覧制限）");
+        console.log("【チェック】未ログイン（閲覧制限中）");
         userInfo.innerText = "閲覧制限中";
         loginBtn.innerText = "Googleログイン";
-        openModalBtn.style.display = "none";
+        if (openModalBtn) openModalBtn.style.display = "none";
         if (unsubscribe) unsubscribe();
         if (myChart) myChart.destroy();
         historyBody.innerHTML = "<tr><td colspan='6'>ログインするとデータが表示されます</td></tr>";
     }
 });
 
+// C. ログインボタンの動作
 loginBtn.onclick = async () => {
     if (auth.currentUser) {
         if (confirm("ログアウトしますか？")) signOut(auth);
     } else {
-        console.log("【チェック】Googleログイン（リダイレクト）開始...");
+        console.log("【チェック】Googleログイン開始（リダイレクト）");
         signInWithRedirect(auth, provider);
     }
 };
 
 // --- 4. データ読み込み ---
 function loadUserData(uid) {
-    console.log("【チェック】データ読み込み開始... フォルダ:", uid);
+    console.log("【チェック】データ読み込み開始... ユーザーパス:", uid);
     const q = query(collection(db, "users", uid, "resources"), orderBy("date", "asc"));
 
     if (unsubscribe) unsubscribe();
     
     unsubscribe = onSnapshot(q, (snapshot) => {
-        console.log("【チェック】Firestoreからデータ受信。件数:", snapshot.size);
+        console.log("【チェック】受信データ件数:", snapshot.size);
         const labels = [], cData = [], sData = [], coData = [], wData = [];
         historyBody.innerHTML = "";
 
@@ -99,12 +108,21 @@ function loadUserData(uid) {
         });
 
         renderChart(labels, cData, sData, coData, wData);
+
+        // 削除ボタン
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.onclick = async (e) => {
+                if (confirm("削除しますか？")) {
+                    await deleteDoc(doc(db, "users", uid, "resources", e.target.dataset.id));
+                }
+            };
+        });
     }, (error) => {
-        console.error("【エラー】データ受信失敗:", error);
+        console.error("【エラー】Firestore読み込み失敗:", error);
     });
 }
 
-// グラフ描画関数などは以前のものをそのまま引き継いでください（省略せずに全文に含めています）
+// --- 5. グラフ描画 ---
 function renderChart(labels, cData, sData, coData, wData) {
     const ctx = document.getElementById('mainChart');
     if (!ctx) return;
@@ -128,7 +146,7 @@ function renderChart(labels, cData, sData, coData, wData) {
     });
 }
 
-// 保存ボタン、UI制御なども同様に全文上書きしてください
+// --- 6. データ保存 ---
 document.getElementById('saveBtn').addEventListener('click', async () => {
     const user = auth.currentUser;
     if (!user) return alert("ログインが必要です");
@@ -142,14 +160,21 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     };
     try {
         await addDoc(collection(db, "users", user.uid, "resources"), data);
-        document.getElementById("inputModal").style.display = "none";
-    } catch (e) { console.error("【エラー】保存失敗:", e); }
+        modal.style.display = "none";
+    } catch (e) { alert("保存に失敗しました"); }
 });
 
-const editModeBtn = document.getElementById('editModeBtn');
-const editSection = document.getElementById('editSection');
+// --- 7. UI制御 ---
+initAuth(); // 認証初期化実行
+
+if(document.getElementById('date')) {
+    document.getElementById('date').value = new Date().toISOString().substr(0, 10);
+}
+openModalBtn.onclick = () => modal.style.display = "block";
+document.querySelector(".close-btn").onclick = () => modal.style.display = "none";
+window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
+
 editModeBtn.onclick = () => {
     editSection.style.display = editSection.style.display === "none" ? "block" : "none";
     editModeBtn.innerText = editSection.style.display === "none" ? "修正" : "閉じる";
 };
-document.querySelector(".close-btn").onclick = () => modal.style.display = "none";
