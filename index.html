@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>資材管理本丸</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Chart.js と 日付アダプター -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
@@ -23,12 +22,10 @@
     </header>
 
     <main>
-        <!-- 資材グラフ表示エリア -->
         <div class="chart-container">
             <canvas id="mainChart"></canvas>
         </div>
 
-        <!-- 札・小判セクション -->
         <header class="sub-header">
             <div class="header-container">
                 <h1>札・小判</h1>
@@ -39,54 +36,47 @@
             </div>
         </header>
 
-        <!-- 札・小判グラフ表示エリア -->
         <div class="chart-container">
             <canvas id="itemChart"></canvas>
         </div>
 
-        <!-- 履歴管理（修正ボタンで表示切り替え） -->
         <section id="editSection" style="display: none;">
             <h3>データ管理</h3>
             <table id="historyTable">
                 <thead>
-                    <tr>
-                        <th>日付</th>
-                        <th>項目</th>
-                        <th>数値</th>
-                        <th>操作</th>
-                    </tr>
+                    <tr><th>日付</th><th>項目</th><th>数値</th><th>操作</th></tr>
                 </thead>
                 <tbody id="historyBody"></tbody>
             </table>
         </section>
     </main>
 
-    <!-- 資材報告用モーダル -->
+    <!-- 資材モーダル -->
     <div id="inputModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('inputModal')">&times;</span>
             <h2>資材報告</h2>
             <div class="input-row">
                 <div class="input-group"><label>日付</label><input type="date" id="date"></div>
-                <div class="input-group"><label>木炭</label><input type="number" id="charcoal" placeholder="0"></div>
-                <div class="input-group"><label>玉鋼</label><input type="number" id="steel" placeholder="0"></div>
-                <div class="input-group"><label>冷却</label><input type="number" id="coolant" placeholder="0"></div>
-                <div class="input-group"><label>砥石</label><input type="number" id="whetstone" placeholder="0"></div>
+                <div class="input-group"><label>木炭</label><input type="number" id="charcoal"></div>
+                <div class="input-group"><label>玉鋼</label><input type="number" id="steel"></div>
+                <div class="input-group"><label>冷却</label><input type="number" id="coolant"></div>
+                <div class="input-group"><label>砥石</label><input type="number" id="whetstone"></div>
                 <button id="saveBtn" class="save-btn">保存</button>
             </div>
         </div>
     </div>
 
-    <!-- 札・小判報告用モーダル -->
+    <!-- 札・小判モーダル -->
     <div id="itemModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('itemModal')">&times;</span>
             <h2>札・小判 報告</h2>
             <div class="input-row">
                 <div class="input-group"><label>日付</label><input type="date" id="itemDate"></div>
-                <div class="input-group"><label>小判</label><input type="number" id="koban" placeholder="0"></div>
-                <div class="input-group"><label>依頼札</label><input type="number" id="requestTicket" placeholder="0"></div>
-                <div class="input-group"><label>手伝札</label><input type="number" id="helpTicket" placeholder="0"></div>
+                <div class="input-group"><label>小判</label><input type="number" id="koban"></div>
+                <div class="input-group"><label>依頼札</label><input type="number" id="requestTicket"></div>
+                <div class="input-group"><label>手伝札</label><input type="number" id="helpTicket"></div>
                 <button id="saveItemBtn" class="save-btn">保存</button>
             </div>
         </div>

@@ -1,10 +1,7 @@
-/* 基本スタイル */
 body {
     font-family: "Helvetica Neue", Arial, sans-serif;
     background-color: #f4f1ea;
-    margin: 0;
-    padding: 0;
-    color: #333;
+    margin: 0; padding: 0; color: #333;
 }
 
 header, .sub-header {
@@ -23,9 +20,9 @@ header, .sub-header {
 
 h1 { font-size: 1.1rem; margin: 0; }
 
-/* 報告ボタン：朱赤（#e74c3c） */
+/* 報告ボタンをオレンジ・朱赤系に統一 */
 .btn-primary, .save-btn {
-    background-color: #e74c3c !important;
+    background-color: #e67e22 !important; /* 鮮やかなオレンジ */
     color: white !important;
     border: none;
     padding: 8px 18px;
@@ -34,8 +31,11 @@ h1 { font-size: 1.1rem; margin: 0; }
     cursor: pointer;
 }
 
-/* 修正・ログアウトボタン：グレー */
-button:not(.btn-primary):not(.save-btn):not(.delete-btn) {
+.btn-primary:hover, .save-btn:hover {
+    background-color: #d35400 !important; /* 濃いオレンジ */
+}
+
+button:not(.btn-primary):not(.save-btn) {
     background-color: #7f8c8d;
     color: white;
     border: none;
@@ -47,7 +47,6 @@ button:not(.btn-primary):not(.save-btn):not(.delete-btn) {
 
 #loginBtn { background-color: #ffffff; color: #333; }
 
-/* グラフエリア */
 .chart-container {
     background: white;
     margin: 15px auto 40px;
@@ -58,7 +57,6 @@ button:not(.btn-primary):not(.save-btn):not(.delete-btn) {
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-/* モーダル：1行に並べるレイアウト */
 .modal {
     display: none;
     position: fixed;
@@ -88,9 +86,3 @@ button:not(.btn-primary):not(.save-btn):not(.delete-btn) {
 .input-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
 
 .close-btn { float: right; cursor: pointer; font-size: 28px; }
-
-/* テーブル */
-#editSection { max-width: 1150px; margin: 0 auto; padding: 20px; background: white; border-radius: 8px; }
-table { width: 100%; border-collapse: collapse; }
-th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; }
-.delete-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }

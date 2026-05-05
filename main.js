@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -8,8 +8,7 @@ const firebaseConfig = {
     projectId: "touken-manager",
     storageBucket: "touken-manager.firebasestorage.app",
     messagingSenderId: "628627612862",
-    appId: "1:628627612862:web:c06b91f4fc656064472aef",
-    measurementId: "G-942WCG4VMM"
+    appId: "1:628627612862:web:c06b91f4fc656064472aef"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -23,13 +22,11 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('userInfo').innerText = `${user.displayName} の本丸`;
         document.getElementById('loginBtn').innerText = "ログアウト";
-        document.getElementById('openModalBtn').style.display = "block";
-        document.getElementById('openItemModalBtn').style.display = "block";
-        // データの読み込み
+        document.querySelectorAll('.btn-primary').forEach(b => b.style.display = "block");
         loadData(user.uid, "resources", "mainChart");
         loadData(user.uid, "items", "itemChart");
     } else {
-        document.getElementById('userInfo').innerText = "閲覧制限中";
+        document.getElementById('userInfo').innerText = "資材状況 (未ログイン)";
         document.getElementById('loginBtn').innerText = "Googleログイン";
     }
 });
@@ -49,6 +46,8 @@ function loadData(uid, path, canvasId) {
             });
         });
         renderChart(canvasId, labels, datasets);
+    }, (error) => {
+        console.error("Firestore Error:", error);
     });
 }
 
@@ -71,7 +70,8 @@ function renderChart(id, labels, dataObj) {
         data: dataObj[key],
         borderColor: colors[key] || '#333',
         backgroundColor: colors[key] || '#333',
-        tension: 0.1
+        tension: 0.1,
+        fill: false
     }));
 
     charts[id] = new Chart(ctx, {
@@ -85,43 +85,33 @@ function renderChart(id, labels, dataObj) {
     });
 }
 
-// 保存アクション
+async function saveData(path, fields, modalId) {
+    const user = auth.currentUser;
+    if (!user) return alert("ログインしてください");
+    const dateId = modalId === "inputModal" ? "date" : "itemDate";
+    const dateVal = document.getElementById(dateId).value;
+    if (!dateVal) return alert("日付を入力してください");
+
+    const data = { date: dateVal, timestamp: new Date() };
+    Object.keys(fields).forEach(k => data[k] = parseInt(document.getElementById(fields[k]).value) || 0);
+    
+    try {
+        await addDoc(collection(db, "users", user.uid, path), data);
+        closeModal(modalId);
+    } catch (e) {
+        alert("保存に失敗しました。ルールの設定を確認してください。");
+    }
+}
+
 document.getElementById('saveBtn').onclick = () => saveData("resources", {
-    charcoal: document.getElementById('charcoal').value,
-    steel: document.getElementById('steel').value,
-    coolant: document.getElementById('coolant').value,
-    whetstone: document.getElementById('whetstone').value
+    charcoal: "charcoal", steel: "steel", coolant: "coolant", whetstone: "whetstone"
 }, "inputModal");
 
 document.getElementById('saveItemBtn').onclick = () => saveData("items", {
-    koban: document.getElementById('koban').value,
-    requestTicket: document.getElementById('requestTicket').value,
-    helpTicket: document.getElementById('helpTicket').value
+    koban: "koban", requestTicket: "requestTicket", helpTicket: "helpTicket"
 }, "itemModal");
 
-async function saveData(path, fields, modalId) {
-    const user = auth.currentUser;
-    if (!user) return alert("ログインが必要です");
-    const dateId = modalId === "inputModal" ? "date" : "itemDate";
-    const data = { date: document.getElementById(dateId).value, timestamp: new Date() };
-    Object.keys(fields).forEach(k => data[k] = parseInt(fields[k]) || 0);
-    
-    await addDoc(collection(db, "users", user.uid, path), data);
-    document.getElementById(modalId).style.display = "none";
-}
-
-// UIイベント
-document.getElementById('openModalBtn').onclick = () => {
-    document.getElementById('date').value = new Date().toISOString().substr(0, 10);
-    document.getElementById('inputModal').style.display = 'block';
-};
-document.getElementById('openItemModalBtn').onclick = () => {
-    document.getElementById('itemDate').value = new Date().toISOString().substr(0, 10);
-    document.getElementById('itemModal').style.display = 'block';
-};
+document.getElementById('openModalBtn').onclick = () => document.getElementById('inputModal').style.display = 'block';
+document.getElementById('openItemModalBtn').onclick = () => document.getElementById('itemModal').style.display = 'block';
 window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 document.getElementById('loginBtn').onclick = () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider);
-document.getElementById('editModeBtn').onclick = () => {
-    const s = document.getElementById('editSection');
-    s.style.display = s.style.display === 'none' ? 'block' : 'none';
-};
