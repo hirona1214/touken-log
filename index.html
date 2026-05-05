@@ -61,11 +61,10 @@
                 </select>
             </div>
 
-            <div class="chart-container main-level-chart">
+            <div class="chart-container">
                 <canvas id="levelChart"></canvas>
             </div>
 
-            <!-- ランキング＆TOP10グラフセクション -->
             <div class="ranking-layout">
                 <div class="ranking-list-container">
                     <h3>直近30日の成長TOP10</h3>
@@ -78,7 +77,7 @@
         </section>
     </main>
 
-    <!-- モーダル類 (IDをJSと完全一致させています) -->
+    <!-- モーダル：資材登録 -->
     <div id="resourceModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('resourceModal')">&times;</span>
@@ -94,6 +93,7 @@
         </div>
     </div>
 
+    <!-- モーダル：小判・札登録 -->
     <div id="itemModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('itemModal')">&times;</span>
@@ -108,30 +108,21 @@
         </div>
     </div>
 
+    <!-- モーダル：レベル登録 -->
     <div id="levelModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('levelModal')">&times;</span>
             <h2>刀剣レベル登録</h2>
             <input type="date" id="lvDate" class="input-date">
             <div id="levelInputContainer">
-                <div class="input-row">
-                    <select id="type_1" onchange="updateRarityOptions(1)">
-                        <option value="">刀種</option>
-                        <option value="短刀(極)">短刀(極)</option><option value="脇差(極)">脇差(極)</option>
-                        <option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
-                        <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
-                        <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
-                    </select>
-                    <select id="rarity_1" onchange="updateNameOptions(1)"><option>レア度</option></select>
-                    <select id="name_1"><option>名前</option></select>
-                    <input type="number" id="lv_1" placeholder="Lv">
-                </div>
+                <!-- ここにJSで行が生成されます -->
             </div>
             <button id="addRowBtn" class="btn-sub">＋行を追加</button>
             <button id="saveLevelBtn" class="btn-save">一括登録</button>
         </div>
     </div>
 
+    <!-- モーダル：名簿登録 -->
     <div id="masterModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('masterModal')">&times;</span>
@@ -143,11 +134,12 @@
                 <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
                 <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
             </select>
-            <input type="number" id="newMasterRarity" placeholder="レア度(1-5)" min="1" max="5">
+            <input type="number" id="newMasterRarity" placeholder="レア度(1-5)">
             <button id="saveMasterBtn" class="btn-save">名簿に登録</button>
         </div>
     </div>
 
+    <!-- モーダル：修正 -->
     <div id="levelEditSection" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('levelEditSection')">&times;</span>

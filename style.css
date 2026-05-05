@@ -267,4 +267,41 @@ main {
     .input-row {
         grid-template-columns: 1fr 1fr;
     }
+
+    /* レベル登録行のレイアウト微調整 */
+.input-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.5fr 0.8fr 40px; /* 削除ボタン用に列を追加 */
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+/* 削除ボタンのデザイン */
+.remove-row-btn {
+    background: #7f8c8d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+
+.remove-row-btn:hover {
+    background: #b54434;
+}
+
+/* モーダル内のスクロール対策（行が増えた時用） */
+#levelInputContainer {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-bottom: 15px;
+}
 }
