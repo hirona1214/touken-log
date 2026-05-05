@@ -37,9 +37,9 @@
         <!-- 刀剣育成タブ -->
         <section id="toukenTab" class="tab-content">
             <div class="btn-group">
-                <button id="openMasterModalBtn" class="btn-action black">＋刀剣(極)登録</button>
+                <!-- 登録ボタンは赤、修正ボタンは黒 -->
                 <button id="openLevelModalBtn" class="btn-action red">＋レベル登録</button>
-                <button id="openLevelEditBtn" class="btn-action black">修正</button>
+                <button id="openLevelEditBtn" class="btn-action black">レベル修正</button>
             </div>
 
             <div class="filter-group">
@@ -72,6 +72,16 @@
                 </div>
                 <div class="ranking-chart-container">
                     <canvas id="top10Chart"></canvas>
+                </div>
+            </div>
+
+            <!-- ★画面最下部に名簿管理エリアを新設 -->
+            <hr style="margin: 50px 0 20px; border: none; border-top: 1px solid #ddd;">
+            <div class="master-admin-section">
+                <p style="font-size: 12px; color: #666;">※名簿（マスタ）の追加・修正はこちら</p>
+                <div class="btn-group">
+                    <button id="openMasterModalBtn" class="btn-sub">＋名簿に新規登録</button>
+                    <button id="openMasterEditBtn" class="btn-sub">名簿の修正・削除</button>
                 </div>
             </div>
         </section>
@@ -114,9 +124,7 @@
             <span class="close-btn" onclick="closeModal('levelModal')">&times;</span>
             <h2>刀剣レベル登録</h2>
             <input type="date" id="lvDate" class="input-date">
-            <div id="levelInputContainer">
-                <!-- ここにJSで行が生成されます -->
-            </div>
+            <div id="levelInputContainer"></div>
             <button id="addRowBtn" class="btn-sub">＋行を追加</button>
             <button id="saveLevelBtn" class="btn-save">一括登録</button>
         </div>
@@ -139,7 +147,7 @@
         </div>
     </div>
 
-    <!-- モーダル：修正 -->
+    <!-- モーダル：レベル記録の修正 -->
     <div id="levelEditSection" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('levelEditSection')">&times;</span>
@@ -148,6 +156,19 @@
         </div>
     </div>
 
+    <!-- ★モーダル：名簿（マスタ）の修正・削除（アップグレード版） -->
+    <div id="masterEditSection" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('masterEditSection')">&times;</span>
+            <h2>名簿の管理（修正・削除）</h2>
+            <p style="font-size: 12px; margin-bottom: 15px; color: #666;">
+                内容を書き換えて「更新」を押すと上書きされます。
+            </p>
+            <div id="masterEditList" style="max-height: 450px; overflow-y: auto;">
+                <!-- ここにJavaScriptで編集用フォームが生成されます -->
+            </div>
+        </div>
+    </div>
     <script type="module" src="main.js"></script>
 </body>
 </html>

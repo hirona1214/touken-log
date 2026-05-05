@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // --- Firebase 設定 ---
@@ -20,7 +20,7 @@ const provider = new GoogleAuthProvider();
 let charts = {};
 let rawToukenData = [];
 let toukenMaster = [];
-let rowCount = 0; // 行管理用
+let rowCount = 0;
 
 // --- 認証状態の監視 ---
 onAuthStateChanged(auth, (user) => {
@@ -40,7 +40,10 @@ onAuthStateChanged(auth, (user) => {
 function loadMasterData() {
     onSnapshot(collection(db, "touken_master"), (snapshot) => {
         toukenMaster = [];
-        snapshot.forEach(doc => toukenMaster.push(doc.data()));
+        snapshot.forEach(doc => {
+            toukenMaster.push({ id: doc.id, ...doc.data() });
+        });
+        renderMasterEditList(); // 名簿修正リストを更新
     });
 }
 
@@ -91,13 +94,11 @@ function calculateGrowthRanking() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
-
     const stats = {};
     rawToukenData.forEach(d => {
         if (!stats[d.name]) stats[d.name] = [];
         stats[d.name].push({ date: d.date, lv: d.lv });
     });
-
     const ranking = [];
     Object.keys(stats).forEach(name => {
         const history = stats[name].sort((a, b) => a.date.localeCompare(b.date));
@@ -109,10 +110,8 @@ function calculateGrowthRanking() {
             if (diff > 0) ranking.push({ name, diff, history: recentRecords });
         }
     });
-
     ranking.sort((a, b) => b.diff - a.diff);
     const top10 = ranking.slice(0, 10);
-
     const listEl = document.getElementById('rankingList');
     if (listEl) {
         listEl.innerHTML = top10.length ? top10.map((item, i) => `
@@ -122,7 +121,6 @@ function calculateGrowthRanking() {
             </div>
         `).join('') : '<p>データ不足です</p>';
     }
-
     const top10Datasets = top10.map(item => ({
         label: item.name,
         data: item.history.map(h => ({ x: h.date, y: h.lv })),
@@ -132,23 +130,70 @@ function calculateGrowthRanking() {
     renderToukenChart('top10Chart', top10Datasets);
 }
 
-// --- レベル登録画面の制御（★今回の大幅修正） ---
+// --- 名簿（マスタ）の修正・削除・更新機能 ---
+function renderMasterEditList() {
+    const container = document.getElementById('masterEditList');
+    if (!container) return;
+    const sorted = [...toukenMaster].sort((a, b) => {
+        if (a.type !== b.type) return a.type.localeCompare(b.type);
+        return a.name.localeCompare(b.name);
+    });
+    container.innerHTML = sorted.map(m => `
+        <div class="edit-master-row" style="display:flex; gap:5px; align-items:center; padding:10px; border-bottom:1px solid #eee; flex-wrap:wrap;">
+            <input type="text" id="editName_${m.id}" value="${m.name}" style="width:100px; padding:5px;">
+            <select id="editType_${m.id}" style="padding:5px;">
+                <option value="短刀(極)" ${m.type === '短刀(極)' ? 'selected' : ''}>短刀(極)</option>
+                <option value="脇差(極)" ${m.type === '脇差(極)' ? 'selected' : ''}>脇差(極)</option>
+                <option value="打刀(極)" ${m.type === '打刀(極)' ? 'selected' : ''}>打刀(極)</option>
+                <option value="太刀(極)" ${m.type === '太刀(極)' ? 'selected' : ''}>太刀(極)</option>
+                <option value="大太刀(極)" ${m.type === '大太刀(極)' ? 'selected' : ''}>大太刀(極)</option>
+                <option value="槍(極)" ${m.type === '槍(極)' ? 'selected' : ''}>槍(極)</option>
+                <option value="薙刀(極)" ${m.type === '薙刀(極)' ? 'selected' : ''}>薙刀(極)</option>
+                <option value="剣(極)" ${m.type === '剣(極)' ? 'selected' : ''}>剣(極)</option>
+            </select>
+            <input type="number" id="editRarity_${m.id}" value="${m.rarity}" style="width:40px; padding:5px;">
+            <div style="margin-left:auto; display:flex; gap:5px;">
+                <button onclick="updateMasterEntry('${m.id}')" style="background:#27ae60; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">更新</button>
+                <button onclick="deleteMasterEntry('${m.id}')" style="background:#7f8c8d; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">削除</button>
+            </div>
+        </div>
+    `).join('');
+}
 
-// モーダルを開くときの初期化
+window.updateMasterEntry = async (id) => {
+    const newName = document.getElementById(`editName_${id}`).value;
+    const newType = document.getElementById(`editType_${id}`).value;
+    const newRarity = parseInt(document.getElementById(`editRarity_${id}`).value);
+    if (!newName || isNaN(newRarity)) return alert("名前とレア度を正しく入力してください");
+    try {
+        await updateDoc(doc(db, "touken_master", id), {
+            name: newName, type: newType, rarity: newRarity
+        });
+        alert("修正完了しました");
+    } catch (e) {
+        alert("修正に失敗しました");
+    }
+};
+
+window.deleteMasterEntry = async (id) => {
+    if (!confirm("この刀剣男士を名簿から削除しますか？")) return;
+    await deleteDoc(doc(db, "touken_master", id));
+};
+
+// --- レベル登録画面の制御 ---
 window.openLevelModal = () => {
     document.getElementById('lvDate').value = new Date().toISOString().split('T')[0];
     const container = document.getElementById('levelInputContainer');
-    container.innerHTML = ""; // 既存の行を全削除
+    container.innerHTML = "";
     rowCount = 0;
-    addInputRow(); // 常に1行目だけを表示した状態にする
+    addInputRow();
     document.getElementById('levelModal').style.display = 'block';
 };
 
-// 行の追加（削除ボタン付き）
 window.addInputRow = () => {
     if (rowCount >= 10) return alert("一度に登録できるのは10振りまでです");
     rowCount++;
-    const rowId = `row_${Date.now()}`; // 一意のID
+    const rowId = `row_${Date.now()}`;
     const row = document.createElement('div');
     row.className = 'input-row';
     row.id = rowId;
@@ -168,17 +213,12 @@ window.addInputRow = () => {
     document.getElementById('levelInputContainer').appendChild(row);
 };
 
-// 行の削除
 window.removeInputRow = (id) => {
     const row = document.getElementById(id);
-    if (row) {
-        row.remove();
-        rowCount--;
-    }
-    if (rowCount === 0) addInputRow(); // 全て消した場合は1行戻す
+    if (row) { row.remove(); rowCount--; }
+    if (rowCount === 0) addInputRow();
 };
 
-// プルダウン連動（クラスベースに変更）
 window.updateRarityOptions = (el) => {
     const type = el.value;
     const raritySelect = el.parentElement.querySelector('.rarity-select');
@@ -194,21 +234,18 @@ window.updateNameOptions = (el) => {
     nameSelect.innerHTML = '<option value="">名前選択</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
 };
 
-// 保存処理
+// --- 保存・表示処理 ---
 async function saveAllLevels() {
     const user = auth.currentUser;
     const dateVal = document.getElementById('lvDate').value;
     if (!user || !dateVal) return alert("日付を確認してください");
-
     const rows = document.querySelectorAll('.input-row');
     let count = 0;
-
     for (const row of rows) {
         const name = row.querySelector('.name-select').value;
         const lv = parseInt(row.querySelector('.lv-input').value);
         const type = row.querySelector('.type-select').value;
         const rarity = parseInt(row.querySelector('.rarity-select').value);
-
         if (name && lv) {
             await addDoc(collection(db, "users", user.uid, "touken"), {
                 date: dateVal, name, lv, type, rarity, timestamp: new Date()
@@ -216,42 +253,33 @@ async function saveAllLevels() {
             count++;
         }
     }
-
-    if (count > 0) {
-        alert(`${count}振りの記録を保存しました`);
-        closeModal('levelModal');
-    } else {
-        alert("名前とレベルを入力してください");
-    }
+    if (count > 0) { closeModal('levelModal'); } else { alert("名前とレベルを入力してください"); }
 }
 
-// --- その他の保存・表示処理 ---
 async function saveResource() {
     const user = auth.currentUser;
     const date = document.getElementById('date').value;
-    if (!user || !date) return alert("日付とログインを確認してください");
-    const data = {
+    if (!user || !date) return alert("日付を確認してください");
+    await addDoc(collection(db, "users", user.uid, "resources"), {
         date,
         charcoal: parseInt(document.getElementById('charcoal').value) || 0,
         steel: parseInt(document.getElementById('steel').value) || 0,
         coolant: parseInt(document.getElementById('coolant').value) || 0,
         whetstone: parseInt(document.getElementById('whetstone').value) || 0
-    };
-    await addDoc(collection(db, "users", user.uid, "resources"), data);
+    });
     closeModal('resourceModal');
 }
 
 async function saveItems() {
     const user = auth.currentUser;
     const date = document.getElementById('itemDate').value;
-    if (!user || !date) return alert("日付とログインを確認してください");
-    const data = {
+    if (!user || !date) return alert("日付を確認してください");
+    await addDoc(collection(db, "users", user.uid, "items"), {
         date,
         koban: parseInt(document.getElementById('koban').value) || 0,
         requestTicket: parseInt(document.getElementById('requestTicket').value) || 0,
         helpTicket: parseInt(document.getElementById('helpTicket').value) || 0
-    };
-    await addDoc(collection(db, "users", user.uid, "items"), data);
+    });
     closeModal('itemModal');
 }
 
@@ -259,10 +287,9 @@ async function saveMasterEntry() {
     const name = document.getElementById('newMasterName').value;
     const type = document.getElementById('newMasterType').value;
     const rarity = parseInt(document.getElementById('newMasterRarity').value);
-    if (!name || !type || !rarity) return alert("全項目入力してください");
+    if (!name || !type || isNaN(rarity)) return alert("全項目入力してください");
     await addDoc(collection(db, "touken_master"), { name, type, rarity });
     closeModal('masterModal');
-    // 入力欄リセット
     document.getElementById('newMasterName').value = "";
     document.getElementById('newMasterRarity').value = "";
 }
@@ -314,8 +341,7 @@ function renderChart(id, labels, dataObj) {
         yAxisID: (key === 'koban' ? 'y' : (id === 'itemChart' ? 'y1' : 'y'))
     }));
     charts[id] = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: datasetArr },
+        type: 'line', data: { labels, datasets: datasetArr },
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' } } } }
     });
 }
@@ -344,7 +370,6 @@ window.switchTab = (id) => {
 
 window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
 
-// --- イベントバインド ---
 const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
 
 bindClick('saveBtn', saveResource);
@@ -360,8 +385,9 @@ bindClick('openItemModalBtn', () => {
 bindClick('saveMasterBtn', saveMasterEntry);
 bindClick('saveLevelBtn', saveAllLevels);
 bindClick('addRowBtn', window.addInputRow);
-bindClick('openLevelModalBtn', window.openLevelModal); // 初期化関数を呼ぶ
+bindClick('openLevelModalBtn', window.openLevelModal);
 bindClick('openMasterModalBtn', () => { document.getElementById('masterModal').style.display = 'block'; });
+bindClick('openMasterEditBtn', () => { document.getElementById('masterEditSection').style.display = 'block'; });
 bindClick('openLevelEditBtn', () => { document.getElementById('levelEditSection').style.display = 'block'; });
 bindClick('loginBtn', () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider));
 
