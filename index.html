@@ -9,18 +9,39 @@
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1 class="main-title">資材状況</h1>
+    <header>
+        <h1 class="main-title">資材状況</h1>
+        <div class="header-btns">
             <button id="openModalBtn" class="plus-report-btn">＋報告</button>
-        </header>
+            <button id="editModeBtn" class="edit-btn">修正</button>
+        </div>
+    </header>
 
+    <div class="container">
         <div class="chart-container">
             <canvas id="mainChart"></canvas>
         </div>
+
+        <div id="editSection" class="edit-section" style="display: none;">
+            <h3 class="section-title">過去の報告履歴</h3>
+            <div class="table-wrapper">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>日付</th>
+                            <th>木炭</th>
+                            <th>玉鋼</th>
+                            <th>冷却</th>
+                            <th>砥石</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- モーダル（報告画面） -->
     <div id="inputModal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
@@ -47,13 +68,12 @@
                         <label>砥石</label>
                         <input type="number" id="whetstone" placeholder="0">
                     </div>
-                    </div>
                 </div>
+                <button id="saveBtn" class="record-btn">RECORD TO CLOUD</button>
             </div>
-            <button id="saveBtn" class="record-btn">RECORD TO CLOUD</button>
         </div>
     </div>
-
+    
     <script type="module" src="main.js"></script>
 </body>
 </html>

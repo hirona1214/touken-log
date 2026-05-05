@@ -1,4 +1,3 @@
-/* 全体の背景：ゲームのベースカラーに近い薄いベージュ系 */
 body {
     background-color: #e9e5dc;
     color: #333;
@@ -7,7 +6,6 @@ body {
     padding: 0;
 }
 
-/* ヘッダー：ゲーム上部のステータスバー風 */
 header {
     background-color: #f8f8f8;
     border-bottom: 2px solid #ccc;
@@ -21,125 +19,152 @@ header {
 .main-title {
     font-size: 1.2rem;
     color: #444;
-    font-weight: bold;
     margin: 0;
-    position: relative;
     padding-left: 10px;
-    border-left: 5px solid #2d5d2d; /* 目録の緑色をアクセントに */
+    border-left: 5px solid #2d5d2d;
 }
 
-/* ＋報告ボタン：ゲーム内の右下「決定」ボタンや「出陣」の赤色をイメージ */
+.header-btns {
+    display: flex;
+    gap: 10px;
+}
+
 .plus-report-btn {
-    background-color: #b32025; /* 刀剣乱舞のイメージカラーの赤 */
+    background-color: #b32025;
     color: #fff;
-    border: 2px solid #8a1a1d;
-    padding: 8px 25px;
-    border-radius: 4px; /* 丸ではなく、少し角がある四角形 */
+    border: 1px solid #8a1a1d;
+    padding: 8px 15px;
+    border-radius: 4px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-    transition: transform 0.1s;
 }
 
-.plus-report-btn:hover {
-    background-color: #d1262c;
-    transform: scale(1.05);
+.edit-btn {
+    background-color: #2d5d2d;
+    color: #fff;
+    border: 1px solid #1e3d1e;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
-/* グラフエリア：ここだけは視認性のために少し暗く締める */
 .container {
-    max-width: 1000px;
-    margin: 30px auto;
-    padding: 0 20px;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 15px;
 }
 
 .chart-container {
     background-color: #fff;
-    padding: 25px;
+    padding: 20px;
     border: 1px solid #ccc;
-    border-radius: 2px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    height: 400px;
+    height: 350px;
+    margin-bottom: 20px;
 }
 
-/* モーダル：部隊選択画面のような和風スタイル */
+/* 修正セクション */
+.edit-section {
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.section-title {
+    font-size: 1rem;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    margin-top: 0;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+th, td {
+    border-bottom: 1px solid #eee;
+    padding: 10px 5px;
+    text-align: center;
+}
+
+th { background-color: #f9f9f9; color: #777; }
+
+.delete-btn {
+    background-color: #cc0000;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* モーダル */
 .modal {
     display: none;
     position: fixed;
     z-index: 999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.6);
 }
 
 .modal-content {
-    background-color: #f1ede4; /* 和紙のような温かい白 */
-    margin: 5% auto;
-    padding: 0;
-    width: 95%;
-    max-width: 450px;
-    border: 3px solid #555;
+    background-color: #f1ede4;
+    margin: 10% auto;
+    width: 90%;
+    max-width: 400px;
+    border: 2px solid #555;
     position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .modal-title {
     background-color: #444;
     color: #fff;
-    padding: 10px 20px;
-    font-size: 1.1rem;
+    padding: 10px;
+    font-size: 1rem;
     margin: 0;
 }
 
 .close-btn {
     position: absolute;
-    right: 15px;
-    top: 5px;
-    font-size: 1.8rem;
-    color: #fff;
-    cursor: pointer;
+    right: 10px; top: 5px;
+    color: #fff; font-size: 1.5rem; cursor: pointer;
 }
 
-/* モーダル内のフォーム */
-.modal-body {
-    padding: 25px;
+.modal-body { padding: 20px; }
+
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 
-.input-group {
-    margin-bottom: 15px;
-}
+.input-group { margin-bottom: 10px; }
 
-label {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 5px;
-    display: block;
-}
+label { font-size: 0.8rem; font-weight: bold; display: block; }
 
 input {
     width: 100%;
-    background-color: #fff;
-    border: 1px solid #aaa;
-    color: #333;
-    padding: 10px;
-    font-size: 1rem;
+    padding: 8px;
+    border: 1px solid #ccc;
     box-sizing: border-box;
-    border-radius: 0; /* カッチリしたデザイン */
 }
 
-/* 登録ボタン：出陣ボタン風のオレンジ寄りの赤 */
 .record-btn {
     width: 100%;
-    background: linear-gradient(to bottom, #e65c00, #b32025);
+    background: linear-gradient(#e65c00, #b32025);
     color: #fff;
-    border: 1px solid #8a1a1d;
-    padding: 15px;
-    font-size: 1.1rem;
+    border: none;
+    padding: 12px;
     font-weight: bold;
     margin-top: 10px;
     cursor: pointer;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }

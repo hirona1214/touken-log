@@ -1,9 +1,7 @@
-// --- 1. Firebase機能のインポート ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } 
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- 2. Firebaseの初期設定 ---
 const firebaseConfig = {
     apiKey: "AIzaSyC32tKkWQTDZrxM2rypST5KIMINI5wFzVc",
     authDomain: "touken-manager.firebaseapp.com",
@@ -17,158 +15,104 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- 3. HTML要素の取得 ---
+// 要素取得
 const dateInput = document.getElementById('date');
 const charcoalInput = document.getElementById('charcoal');
 const steelInput = document.getElementById('steel');
 const coolantInput = document.getElementById('coolant');
 const whetstoneInput = document.getElementById('whetstone');
 const saveBtn = document.getElementById('saveBtn');
-
-// モーダル関連
 const modal = document.getElementById("inputModal");
 const openBtn = document.getElementById("openModalBtn");
 const closeBtn = document.querySelector(".close-btn");
+const editModeBtn = document.getElementById('editModeBtn');
+const editSection = document.getElementById('editSection');
+const historyBody = document.getElementById('historyBody');
 
-// デフォルトの日付を今日に設定
 dateInput.value = new Date().toISOString().substr(0, 10);
 
-// --- 4. モーダルの開閉処理 ---
-openBtn.onclick = () => {
-    modal.style.display = "block";
-};
+// モーダル制御
+openBtn.onclick = () => modal.style.display = "block";
+closeBtn.onclick = () => modal.style.display = "none";
+window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
 
-closeBtn.onclick = () => {
-    modal.style.display = "none";
-};
-
-window.onclick = (event) => {
-    if (event.target == modal) {
-        modal.style.display = "none";
+// 修正モード切り替え
+editModeBtn.onclick = () => {
+    if (editSection.style.display === "none") {
+        editSection.style.display = "block";
+        editModeBtn.innerText = "閉じる";
+    } else {
+        editSection.style.display = "none";
+        editModeBtn.innerText = "修正";
     }
 };
 
-// --- 5. 保存機能 ---
+// 保存
 saveBtn.addEventListener('click', async () => {
-    const date = dateInput.value;
-    const charcoal = parseInt(charcoalInput.value);
-    const steel = parseInt(steelInput.value);
-    const coolant = parseInt(coolantInput.value);
-    const whetstone = parseInt(whetstoneInput.value);
+    const data = {
+        date: dateInput.value,
+        charcoal: parseInt(charcoalInput.value),
+        steel: parseInt(steelInput.value),
+        coolant: parseInt(coolantInput.value),
+        whetstone: parseInt(whetstoneInput.value),
+        timestamp: new Date()
+    };
 
-    if (!date || isNaN(charcoal) || isNaN(steel) || isNaN(coolant) || isNaN(whetstone)) {
-        alert("すべての数値を入力してください");
-        return;
-    }
+    if (!data.date || isNaN(data.charcoal)) return alert("入力を確認してください");
 
     try {
-        await addDoc(collection(db, "resources"), {
-            date: date,
-            charcoal: charcoal,
-            steel: steel,
-            coolant: coolant,
-            whetstone: whetstone,
-            timestamp: new Date()
-        });
-        
-        alert("報告を完了しました");
-        
-        // 入力欄をリセットしてモーダルを閉じる
-        charcoalInput.value = "";
-        steelInput.value = "";
-        coolantInput.value = "";
-        whetstoneInput.value = "";
+        await addDoc(collection(db, "resources"), data);
+        alert("報告完了");
         modal.style.display = "none";
-
-    } catch (e) {
-        console.error("Error adding document: ", e);
-        alert("保存に失敗しました。");
-    }
+    } catch (e) { alert("失敗"); }
 });
 
-// --- 6. 取得 & グラフ描画機能 ---
+// 取得・描画
 const ctx = document.getElementById('mainChart').getContext('2d');
 let myChart;
-
 const q = query(collection(db, "resources"), orderBy("date", "asc"));
 
-onSnapshot(q, (querySnapshot) => {
-    const labels = [];
-    const charcoalData = [];
-    const steelData = [];
-    const coolantData = [];
-    const whetstoneData = [];
+onSnapshot(q, (snapshot) => {
+    const labels = [], cData = [], sData = [], coData = [], wData = [];
+    historyBody.innerHTML = "";
 
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        labels.push(data.date);
-        charcoalData.push(data.charcoal);
-        steelData.push(data.steel);
-        coolantData.push(data.coolant || 0);
-        whetstoneData.push(data.whetstone || 0);
+    snapshot.forEach((document) => {
+        const d = document.data();
+        const id = document.id;
+        labels.push(d.date);
+        cData.push(d.charcoal); sData.push(d.steel);
+        coData.push(d.coolant || 0); wData.push(d.whetstone || 0);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${d.date.slice(5)}</td>
+            <td>${d.charcoal}</td><td>${d.steel}</td>
+            <td>${d.coolant || 0}</td><td>${d.whetstone || 0}</td>
+            <td><button class="delete-btn" data-id="${id}">削</button></td>
+        `;
+        historyBody.appendChild(tr);
     });
 
-    if (myChart) {
-        myChart.destroy();
-    }
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+            if (confirm("削除しますか？")) {
+                await deleteDoc(doc(db, "resources", e.target.dataset.id));
+            }
+        };
+    });
 
+    if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                {
-                    label: '木炭',
-                    data: charcoalData,
-                    borderColor: '#e67e22',
-                    backgroundColor: '#e67e22',
-                    borderWidth: 2,
-                    tension: 0.1
-                },
-                {
-                    label: '玉鋼',
-                    data: steelData,
-                    borderColor: '#95a5a6',
-                    backgroundColor: '#95a5a6',
-                    borderWidth: 2,
-                    tension: 0.1
-                },
-                {
-                    label: '冷却材',
-                    data: coolantData,
-                    borderColor: '#3498db',
-                    backgroundColor: '#3498db',
-                    borderWidth: 2,
-                    tension: 0.1
-                },
-                {
-                    label: '砥石',
-                    data: whetstoneData,
-                    borderColor: '#27ae60',
-                    backgroundColor: '#27ae60',
-                    borderWidth: 2,
-                    tension: 0.1
-                }
+                { label: '木炭', data: cData, borderColor: '#e67e22', tension: 0.1 },
+                { label: '玉鋼', data: sData, borderColor: '#95a5a6', tension: 0.1 },
+                { label: '冷却', data: coData, borderColor: '#3498db', tension: 0.1 },
+                { label: '砥石', data: wData, borderColor: '#27ae60', tension: 0.1 }
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false, // 画面サイズに合わせる
-            plugins: {
-                legend: {
-                    labels: { color: '#888', font: { size: 12 } }
-                }
-            },
-            scales: {
-                y: {
-                    grid: { color: '#262626' },
-                    ticks: { color: '#666' }
-                },
-                x: {
-                    grid: { color: '#262626' },
-                    ticks: { color: '#666' }
-                }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false }
     });
 });
