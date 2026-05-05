@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // --- Firebase 設定 ---
@@ -36,7 +36,6 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // --- データ読み込み系 ---
-
 function loadMasterData() {
     onSnapshot(collection(db, "touken_master"), (snapshot) => {
         toukenMaster = [];
@@ -51,13 +50,13 @@ function loadToukenData(uid) {
         snapshot.forEach(doc => {
             rawToukenData.push({ id: doc.id, ...doc.data() });
         });
-        updateToukenView();
-        renderEditList();
+        updateToukenView(); // 全体グラフ更新
+        renderEditList();   // 修正リスト更新
+        calculateGrowthRanking(); // ★ランキング計算実行
     });
 }
 
 function loadResourceData(uid) {
-    // 資材チャート用
     onSnapshot(query(collection(db, "users", uid, "resources"), orderBy("date", "asc")), (snapshot) => {
         const labels = [];
         const datasets = { charcoal: [], steel: [], coolant: [], whetstone: [] };
@@ -72,7 +71,6 @@ function loadResourceData(uid) {
         renderChart('mainChart', labels, datasets);
     });
 
-    // アイテムチャート用
     onSnapshot(query(collection(db, "users", uid, "items"), orderBy("date", "asc")), (snapshot) => {
         const labels = [];
         const datasets = { koban: [], requestTicket: [], helpTicket: [] };
@@ -87,49 +85,91 @@ function loadResourceData(uid) {
     });
 }
 
-// --- 保存処理系 ---
+// --- ★ランキング計算ロジック ---
+function calculateGrowthRanking() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
 
-// 資材保存
+    const stats = {};
+    rawToukenData.forEach(d => {
+        if (!stats[d.name]) stats[d.name] = [];
+        stats[d.name].push({ date: d.date, lv: d.lv });
+    });
+
+    const ranking = [];
+    Object.keys(stats).forEach(name => {
+        const history = stats[name].sort((a, b) => a.date.localeCompare(b.date));
+        const recentRecords = history.filter(h => h.date >= dateStr);
+        
+        if (recentRecords.length >= 2) {
+            const first = recentRecords[0];
+            const last = recentRecords[recentRecords.length - 1];
+            const diff = last.lv - first.lv;
+            if (diff > 0) ranking.push({ name, diff, history: recentRecords });
+        }
+    });
+
+    // 上昇値順にソートしてTOP10を抽出
+    ranking.sort((a, b) => b.diff - a.diff);
+    const top10 = ranking.slice(0, 10);
+
+    // リスト表示
+    const listEl = document.getElementById('rankingList');
+    if (listEl) {
+        listEl.innerHTML = top10.length ? top10.map((item, i) => `
+            <div class="ranking-item">
+                <strong>${i + 1}位: ${item.name}</strong> 
+                <span style="color:#b54434;">(+${item.diff})</span>
+            </div>
+        `).join('') : '<p>データ不足です</p>';
+    }
+
+    // TOP10グラフ表示
+    const top10Datasets = top10.map(item => ({
+        label: item.name,
+        data: item.history.map(h => ({ x: h.date, y: h.lv })),
+        borderColor: stringToColor(item.name),
+        tension: 0.1,
+        fill: false
+    }));
+    renderToukenChart('top10Chart', top10Datasets);
+}
+
+// --- 保存処理系 ---
 async function saveResource() {
     const user = auth.currentUser;
     const date = document.getElementById('date').value;
     if (!user || !date) return alert("日付とログインを確認してください");
-    
     const data = {
-        date: date,
+        date,
         charcoal: parseInt(document.getElementById('charcoal').value) || 0,
         steel: parseInt(document.getElementById('steel').value) || 0,
         coolant: parseInt(document.getElementById('coolant').value) || 0,
-        whetstone: parseInt(document.getElementById('whetstone').value) || 0,
-        timestamp: new Date()
+        whetstone: parseInt(document.getElementById('whetstone').value) || 0
     };
     await addDoc(collection(db, "users", user.uid, "resources"), data);
     closeModal('resourceModal');
 }
 
-// アイテム保存
 async function saveItems() {
     const user = auth.currentUser;
     const date = document.getElementById('itemDate').value;
     if (!user || !date) return alert("日付とログインを確認してください");
-
     const data = {
-        date: date,
+        date,
         koban: parseInt(document.getElementById('koban').value) || 0,
         requestTicket: parseInt(document.getElementById('requestTicket').value) || 0,
-        helpTicket: parseInt(document.getElementById('helpTicket').value) || 0,
-        timestamp: new Date()
+        helpTicket: parseInt(document.getElementById('helpTicket').value) || 0
     };
     await addDoc(collection(db, "users", user.uid, "items"), data);
     closeModal('itemModal');
 }
 
-// 刀剣レベル一括保存
 async function saveAllLevels() {
     const user = auth.currentUser;
     const dateVal = document.getElementById('lvDate').value;
     if (!user || !dateVal) return alert("日付を確認してください");
-
     for (let i = 1; i <= rowCount; i++) {
         const name = document.getElementById(`name_${i}`).value;
         const lv = parseInt(document.getElementById(`lv_${i}`).value);
@@ -144,7 +184,6 @@ async function saveAllLevels() {
     closeModal('levelModal');
 }
 
-// 名簿登録
 async function saveMasterEntry() {
     const name = document.getElementById('newMasterName').value;
     const type = document.getElementById('newMasterType').value;
@@ -154,8 +193,7 @@ async function saveMasterEntry() {
     closeModal('masterModal');
 }
 
-// --- 刀剣UI操作・修正機能 ---
-
+// --- 刀剣UI操作 ---
 window.deleteLevelRecord = async (docId) => {
     if (!confirm("記録を削除しますか？")) return;
     await deleteDoc(doc(db, "users", auth.currentUser.uid, "touken", docId));
@@ -166,9 +204,9 @@ function renderEditList() {
     if (!container) return;
     const sorted = [...rawToukenData].sort((a, b) => b.date.localeCompare(a.date));
     container.innerHTML = sorted.map(d => `
-        <div class="edit-item" style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
+        <div class="edit-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
             <span>${d.date} | <strong>${d.name}</strong> (Lv${d.lv})</span>
-            <button onclick="deleteLevelRecord('${d.id}')" style="background:#b54434; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;">削除</button>
+            <button onclick="deleteLevelRecord('${d.id}')" style="background:#b54434; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">削除</button>
         </div>
     `).join('');
 }
@@ -195,8 +233,10 @@ window.addInputRow = () => {
     row.innerHTML = `
         <select id="type_${rowCount}" onchange="updateRarityOptions(${rowCount})">
             <option value="">刀種</option>
-            <option value="短刀(極)">短刀(極)</option><option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
-            <option value="短刀">短刀</option><option value="打刀">打刀</option><option value="太刀">太刀</option>
+            <option value="短刀(極)">短刀(極)</option><option value="脇差(極)">脇差(極)</option>
+            <option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
+            <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
+            <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
         </select>
         <select id="rarity_${rowCount}" onchange="updateNameOptions(${rowCount})"><option>レア度</option></select>
         <select id="name_${rowCount}"><option>名前</option></select>
@@ -205,8 +245,7 @@ window.addInputRow = () => {
     document.getElementById('levelInputContainer').appendChild(row);
 };
 
-// --- グラフ・表示制御系 ---
-
+// --- グラフ表示系 ---
 function updateToukenView() {
     const typeFilter = document.getElementById('filterType')?.value || 'all';
     const rarityFilter = document.getElementById('filterRarity')?.value || 'all';
@@ -233,7 +272,8 @@ function renderChart(id, labels, dataObj) {
     if (charts[id]) charts[id].destroy();
     const colors = { charcoal: '#b54434', steel: '#7f8c8d', coolant: '#3498db', whetstone: '#27ae60', koban: '#f1c40f', requestTicket: '#9b59b6', helpTicket: '#e74c3c' };
     const datasetArr = Object.keys(dataObj).map(key => ({
-        label: key, data: dataObj[key], borderColor: colors[key], yAxisID: (key === 'koban' ? 'y' : (id === 'itemChart' ? 'y1' : 'y'))
+        label: key, data: dataObj[key], borderColor: colors[key],
+        yAxisID: (key === 'koban' ? 'y' : (id === 'itemChart' ? 'y1' : 'y'))
     }));
     charts[id] = new Chart(ctx, {
         type: 'line',
@@ -267,10 +307,8 @@ window.switchTab = (id) => {
 window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
 
 // --- イベントバインド ---
-
 const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
 
-// 資材・アイテム系
 bindClick('saveBtn', saveResource);
 bindClick('saveItemBtn', saveItems);
 bindClick('openModalBtn', () => { 
@@ -281,8 +319,6 @@ bindClick('openItemModalBtn', () => {
     document.getElementById('itemDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('itemModal').style.display = 'block'; 
 });
-
-// 刀剣系
 bindClick('saveMasterBtn', saveMasterEntry);
 bindClick('saveLevelBtn', saveAllLevels);
 bindClick('addRowBtn', window.addInputRow);
@@ -292,11 +328,7 @@ bindClick('openLevelModalBtn', () => {
 });
 bindClick('openMasterModalBtn', () => { document.getElementById('masterModal').style.display = 'block'; });
 bindClick('openLevelEditBtn', () => { document.getElementById('levelEditSection').style.display = 'block'; });
-
-// 共通
 bindClick('loginBtn', () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider));
 
-const filterType = document.getElementById('filterType');
-const filterRarity = document.getElementById('filterRarity');
-if(filterType) filterType.addEventListener('change', updateToukenView);
-if(filterRarity) filterRarity.addEventListener('change', updateToukenView);
+document.getElementById('filterType')?.addEventListener('change', updateToukenView);
+document.getElementById('filterRarity')?.addEventListener('change', updateToukenView);

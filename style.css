@@ -1,116 +1,270 @@
 :root {
-    --main-bg: #f8f8f8;
+    --main-bg: #f4f7f6;
     --card-bg: #ffffff;
     --accent-red: #b54434;
-    --accent-black: #333333;
-    --text-color: #2c3e50;
+    --accent-black: #2c3e50;
+    --text-color: #333333;
+    --border-color: #e0e0e0;
 }
 
 body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--main-bg);
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    background: var(--main-bg);
     color: var(--text-color);
     margin: 0;
+    line-height: 1.6;
 }
 
+/* ヘッダー */
 header {
     background: var(--accent-black);
     color: white;
-    padding: 1rem 2rem;
+    padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.btn-auth {
+    background: transparent;
+    border: 1px solid white;
+    color: white;
+    padding: 5px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* タブメニュー */
 .tab-menu {
     display: flex;
-    background: #eee;
-    padding: 0 1rem;
+    background: #fff;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
 }
 
 .tab-btn {
+    flex: 1;
     border: none;
-    padding: 1rem 2rem;
+    padding: 15px;
     cursor: pointer;
     background: none;
+    font-size: 16px;
     font-weight: bold;
+    color: #7f8c8d;
 }
 
 .tab-btn.active {
-    background: var(--card-bg);
+    color: var(--accent-red);
     border-bottom: 3px solid var(--accent-red);
 }
 
-.tab-content { display: none; padding: 2rem; }
-.tab-content.active { display: block; }
-
-.chart-container {
-    background: var(--card-bg);
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    margin-bottom: 2rem;
-    height: 400px;
+/* メインコンテンツ */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
 }
 
-.btn-group { margin-bottom: 1.5rem; }
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ボタン群 */
+.btn-group {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
 
 .btn-action {
-    padding: 0.8rem 1.5rem;
+    padding: 10px 20px;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
+    color: white;
     font-weight: bold;
-    margin-right: 0.5rem;
+    transition: opacity 0.2s;
 }
 
-.btn-action.red { background: var(--accent-red); color: white; }
-.btn-action.black { background: var(--accent-black); color: white; }
+.btn-action:hover {
+    opacity: 0.8;
+}
+
+.red { background: var(--accent-red); }
+.black { background: var(--accent-black); }
+
+/* フィルター */
+.filter-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-group select {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* グラフコンテナ */
+.chart-container {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    height: 350px;
+}
+
+/* ★ランキング＆TOP10レイアウト */
+.ranking-layout {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+    align-items: flex-start;
+}
+
+.ranking-list-container {
+    flex: 1;
+    min-width: 200px;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.ranking-list-container h3 {
+    margin-top: 0;
+    font-size: 16px;
+    border-bottom: 2px solid var(--accent-red);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.ranking-item {
+    padding: 10px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.ranking-chart-container {
+    flex: 3;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    height: 400px;
+}
 
 /* モーダル */
 .modal {
     display: none;
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
     z-index: 1000;
 }
 
 .modal-content {
     background: white;
     margin: 5% auto;
-    padding: 2rem;
+    padding: 30px;
     width: 90%;
-    max-width: 600px;
-    border-radius: 8px;
+    max-width: 550px;
+    border-radius: 12px;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+/* 入力フォーム */
+.input-date {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.input-grid input {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
 }
 
 .input-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    grid-template-columns: 1.5fr 1fr 1.5fr 0.8fr;
+    gap: 8px;
     margin-bottom: 10px;
 }
 
-select, input {
+.input-row select, .input-row input {
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
+    width: 100%;
 }
 
 .btn-save {
     background: var(--accent-red);
     color: white;
-    width: 100%;
-    padding: 1rem;
     border: none;
-    margin-top: 1rem;
+    padding: 15px;
+    width: 100%;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 6px;
     cursor: pointer;
 }
 
-.edit-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+.btn-sub {
+    background: #7f8c8d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* スマホ対応 */
+@media (max-width: 768px) {
+    .ranking-layout {
+        flex-direction: column;
+    }
+    .ranking-list-container {
+        max-width: 100%;
+        width: 100%;
+    }
+    .input-row {
+        grid-template-columns: 1fr 1fr;
+    }
 }
