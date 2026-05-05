@@ -22,13 +22,13 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('userInfo').innerText = `${user.displayName} の本丸`;
         document.getElementById('loginBtn').innerText = "ログアウト";
-        document.querySelectorAll('.btn-primary').forEach(b => b.style.display = "block");
+        document.querySelectorAll('.btn-action.red').forEach(b => b.style.display = "block");
         loadData(user.uid, "resources", "mainChart");
         loadData(user.uid, "items", "itemChart");
     } else {
-        document.getElementById('userInfo').innerText = "資材状況 (未ログイン)";
-        document.getElementById('loginBtn').innerText = "Googleログイン";
-        document.querySelectorAll('.btn-primary').forEach(b => b.style.display = "none");
+        document.getElementById('userInfo').innerText = "(未ログイン)";
+        document.getElementById('loginBtn').innerText = "ログイン";
+        document.querySelectorAll('.btn-action.red').forEach(b => b.style.display = "none");
     }
 });
 
@@ -55,7 +55,7 @@ function renderChart(id, labels, dataObj) {
     if (charts[id]) charts[id].destroy();
     
     const colors = {
-        charcoal: '#e67e22', steel: '#95a5a6', coolant: '#3498db', whetstone: '#27ae60',
+        charcoal: '#b54434', steel: '#7f8c8d', coolant: '#3498db', whetstone: '#27ae60',
         koban: '#f1c40f', requestTicket: '#9b59b6', helpTicket: '#e74c3c'
     };
     
@@ -73,7 +73,6 @@ function renderChart(id, labels, dataObj) {
             backgroundColor: colors[key] || '#333',
             tension: 0.1,
             pointRadius: 4,
-            // 小判は左軸(y)、札系は右軸(y1)を使用
             yAxisID: (id === 'itemChart') ? (isKoban ? 'y' : 'y1') : 'y'
         };
     });
@@ -84,53 +83,28 @@ function renderChart(id, labels, dataObj) {
         scales: {
             x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'MM/dd' } } },
             y: {
-                type: 'linear',
-                display: true,
-                position: 'left',
+                type: 'linear', position: 'left',
                 title: { display: true, text: id === 'itemChart' ? '小判' : '資材量' }
             }
         }
     };
 
-    // 札・小判グラフの場合のみ右軸(y1)を追加
     if (id === 'itemChart') {
         chartOptions.scales.y1 = {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: { display: true, text: '依頼札・手伝札' },
-            grid: { drawOnChartArea: false } // グリッドが重なって見にくくなるのを防ぐ
+            type: 'linear', position: 'right',
+            title: { display: true, text: '札' },
+            grid: { drawOnChartArea: false }
         };
     }
 
-    charts[id] = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: datasetArr },
-        options: chartOptions
-    });
+    charts[id] = new Chart(ctx, { type: 'line', data: { labels, datasets: datasetArr }, options: chartOptions });
 }
 
-// 保存ボタンのイベント
-document.getElementById('saveBtn').addEventListener('click', () => {
-    const fields = {
-        charcoal: "charcoal", steel: "steel", coolant: "coolant", whetstone: "whetstone"
-    };
-    execSave("resources", fields, "date", "inputModal");
-});
-
-document.getElementById('saveItemBtn').addEventListener('click', () => {
-    const fields = {
-        koban: "koban", requestTicket: "requestTicket", helpTicket: "helpTicket"
-    };
-    execSave("items", fields, "itemDate", "itemModal");
-});
-
-async function execSave(path, fields, dateInputId, modalId) {
+async function saveData(path, fields, dateInputId, modalId) {
     const user = auth.currentUser;
     if (!user) return alert("ログインしてください");
-    
     const dateVal = document.getElementById(dateInputId).value;
-    if (!dateVal) return alert("日付を入力してください");
+    if (!dateVal) return alert("日付を選択してください");
 
     const data = { date: dateVal, timestamp: new Date() };
     for (let key in fields) {
@@ -139,21 +113,19 @@ async function execSave(path, fields, dateInputId, modalId) {
     
     try {
         await addDoc(collection(db, "users", user.uid, path), data);
-        document.getElementById(modalId).style.display = 'none';
-        // フォームリセット
+        closeModal(modalId);
         for (let key in fields) document.getElementById(key).value = "";
     } catch (e) {
         alert("保存に失敗しました。");
     }
 }
 
-document.getElementById('openModalBtn').onclick = () => {
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('inputModal').style.display = 'block';
-};
-document.getElementById('openItemModalBtn').onclick = () => {
-    document.getElementById('itemDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('itemModal').style.display = 'block';
-};
+document.getElementById('saveBtn').onclick = () => saveData("resources", { charcoal: "charcoal", steel: "steel", coolant: "coolant", whetstone: "whetstone" }, "date", "inputModal");
+document.getElementById('saveItemBtn').onclick = () => saveData("items", { koban: "koban", requestTicket: "requestTicket", helpTicket: "helpTicket" }, "itemDate", "itemModal");
+
+document.getElementById('openModalBtn').onclick = () => { document.getElementById('date').value = new Date().toISOString().split('T')[0]; document.getElementById('inputModal').style.display = 'block'; };
+document.getElementById('openItemModalBtn').onclick = () => { document.getElementById('itemDate').value = new Date().toISOString().split('T')[0]; document.getElementById('itemModal').style.display = 'block'; };
 window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 document.getElementById('loginBtn').onclick = () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider);
+document.getElementById('editModeBtn').onclick = () => { const s = document.getElementById('editSection'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; };
+document.getElementById('editItemModeBtn').onclick = () => { const s = document.getElementById('editSection'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; };

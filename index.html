@@ -3,51 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>資材管理本丸</title>
+    <title>本丸管理</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
 
-    <header>
-        <div class="header-container">
-            <h1 id="userInfo">資材状況</h1>
-            <div class="header-btns">
-                <button id="openModalBtn" class="btn-primary" style="display: none;">＋報告</button>
-                <button id="editModeBtn">修正</button>
-                <button id="loginBtn">Googleログイン</button>
+    <!-- メインヘッダー -->
+    <header class="main-header">
+        <div class="header-inner">
+            <div class="main-title">
+                <h1>本丸管理</h1>
+                <span id="userInfo" class="user-name"></span>
+            </div>
+            <div class="auth-area">
+                <button id="loginBtn" class="mini-btn">ログイン</button>
             </div>
         </div>
     </header>
 
     <main>
-        <div class="chart-container">
-            <canvas id="mainChart"></canvas>
-        </div>
-
-        <header class="sub-header">
-            <div class="header-container">
-                <h1>札・小判</h1>
-                <div class="header-btns">
-                    <button id="openItemModalBtn" class="btn-primary" style="display: none;">＋報告</button>
-                    <button id="editItemModeBtn">修正</button>
-                </div>
+        <!-- 資材セクション -->
+        <section class="kanban-section">
+            <div class="section-tag green">資材状況</div>
+            <div class="btn-group">
+                <button id="openModalBtn" class="btn-action red" style="display: none;">＋報告</button>
+                <button id="editModeBtn" class="btn-action black">修正</button>
             </div>
-        </header>
+            <div class="chart-container">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </section>
 
-        <div class="chart-container">
-            <canvas id="itemChart"></canvas>
-        </div>
+        <!-- 札・小判セクション -->
+        <section class="kanban-section">
+            <div class="section-tag green">札・小判</div>
+            <div class="btn-group">
+                <button id="openItemModalBtn" class="btn-action red" style="display: none;">＋報告</button>
+                <button id="editItemModeBtn" class="btn-action black">修正</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="itemChart"></canvas>
+            </div>
+        </section>
 
-        <section id="editSection" style="display: none;">
-            <h3>データ管理</h3>
-            <table id="historyTable">
-                <thead>
-                    <tr><th>日付</th><th>項目</th><th>数値</th><th>操作</th></tr>
-                </thead>
-                <tbody id="historyBody"></tbody>
-            </table>
+        <!-- 修正用セクション -->
+        <section id="editSection" class="kanban-section" style="display: none;">
+            <div class="section-tag black">データ管理</div>
+            <div class="table-scroll">
+                <table id="historyTable">
+                    <thead>
+                        <tr><th>日付</th><th>項目</th><th>数値</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
         </section>
     </main>
 
@@ -55,14 +66,14 @@
     <div id="inputModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('inputModal')">&times;</span>
-            <h2>資材報告</h2>
+            <h2 class="modal-title">資材報告</h2>
             <div class="input-row">
                 <div class="input-group"><label>日付</label><input type="date" id="date"></div>
                 <div class="input-group"><label>木炭</label><input type="number" id="charcoal"></div>
                 <div class="input-group"><label>玉鋼</label><input type="number" id="steel"></div>
                 <div class="input-group"><label>冷却</label><input type="number" id="coolant"></div>
                 <div class="input-group"><label>砥石</label><input type="number" id="whetstone"></div>
-                <button id="saveBtn" class="save-btn">保存</button>
+                <button id="saveBtn" class="btn-save">保存</button>
             </div>
         </div>
     </div>
@@ -71,13 +82,13 @@
     <div id="itemModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('itemModal')">&times;</span>
-            <h2>札・小判 報告</h2>
+            <h2 class="modal-title">札・小判 報告</h2>
             <div class="input-row">
                 <div class="input-group"><label>日付</label><input type="date" id="itemDate"></div>
                 <div class="input-group"><label>小判</label><input type="number" id="koban"></div>
                 <div class="input-group"><label>依頼札</label><input type="number" id="requestTicket"></div>
                 <div class="input-group"><label>手伝札</label><input type="number" id="helpTicket"></div>
-                <button id="saveItemBtn" class="save-btn">保存</button>
+                <button id="saveItemBtn" class="btn-save">保存</button>
             </div>
         </div>
     </div>

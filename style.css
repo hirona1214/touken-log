@@ -1,16 +1,20 @@
+/* 和風UIデザイン */
 body {
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    background-color: #f4f1ea;
-    margin: 0; padding: 0; color: #333;
+    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    background-color: #f2ede4; /* 和紙のようなベージュ */
+    margin: 0;
+    padding: 0;
+    color: #333;
 }
 
-header, .sub-header {
-    background-color: #2c3e50;
-    color: white;
+/* メインヘッダー */
+.main-header {
+    background-color: #ffffff;
+    border-bottom: 3px solid #d1ccc0;
     padding: 10px 20px;
 }
 
-.header-container {
+.header-inner {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -18,71 +22,129 @@ header, .sub-header {
     margin: 0 auto;
 }
 
-h1 { font-size: 1.1rem; margin: 0; }
+.main-title h1 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: #444;
+    display: inline-block;
+}
 
-/* 報告ボタンをオレンジ・朱赤系に統一 */
-.btn-primary, .save-btn {
-    background-color: #e67e22 !important; /* 鮮やかなオレンジ */
-    color: white !important;
-    border: none;
-    padding: 8px 18px;
+.user-name {
+    font-size: 0.9rem;
+    color: #888;
+    margin-left: 15px;
+}
+
+/* 小さなログインボタン */
+.mini-btn {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 4px 10px;
+    font-size: 0.8rem;
     border-radius: 4px;
+    cursor: pointer;
+}
+
+/* 各セクション */
+.kanban-section {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+    position: relative;
+}
+
+/* 刀剣風タグ見出し */
+.section-tag {
+    display: inline-block;
+    padding: 5px 25px;
+    color: #fff;
+    font-weight: bold;
+    clip-path: polygon(15% 0, 100% 0, 85% 100%, 0% 100%);
+    margin-bottom: 10px;
+}
+.section-tag.green { background-color: #5d8e6d; } /* 所持タグ風 */
+.section-tag.black { background-color: #333; }
+
+/* アクションボタン */
+.btn-group {
+    float: right;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 5px;
     font-weight: bold;
     cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
 }
+.btn-action.red { background-color: #b54434; }   /* 出陣ボタン風 */
+.btn-action.black { background-color: #4a4a4a; } /* 部隊記録ボタン風 */
 
-.btn-primary:hover, .save-btn:hover {
-    background-color: #d35400 !important; /* 濃いオレンジ */
-}
+.btn-action:active { transform: translateY(2px); box-shadow: none; }
 
-button:not(.btn-primary):not(.save-btn) {
-    background-color: #7f8c8d;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: 8px;
-}
-
-#loginBtn { background-color: #ffffff; color: #333; }
-
+/* グラフコンテナ */
 .chart-container {
     background: white;
-    margin: 15px auto 40px;
+    clear: both;
     padding: 20px;
-    max-width: 1150px;
+    border-radius: 10px;
+    border: 1px solid #d1ccc0;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
     height: 400px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
+/* モーダル */
 .modal {
     display: none;
     position: fixed;
     z-index: 1000;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.7);
 }
 
 .modal-content {
-    background: white;
-    margin: 10% auto;
-    padding: 30px;
+    background: #fdfaf5;
+    margin: 8% auto;
+    padding: 40px;
     width: 90%;
-    max-width: 950px;
-    border-radius: 10px;
+    max-width: 800px;
+    border-radius: 5px;
+    border-top: 10px solid #b54434;
 }
+
+.modal-title { border-bottom: 1px solid #ccc; padding-bottom: 10px; }
 
 .input-row {
     display: flex;
-    gap: 12px;
-    align-items: flex-end;
-    margin-top: 15px;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
 }
 
-.input-group { flex: 1; }
-.input-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
-.input-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+.input-group { flex: 1; min-width: 150px; }
+.input-group label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: #666; }
+.input-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
 
-.close-btn { float: right; cursor: pointer; font-size: 28px; }
+.btn-save {
+    background-color: #b54434;
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.close-btn { float: right; cursor: pointer; font-size: 2rem; color: #999; }
+
+/* テーブル */
+.table-scroll { overflow-x: auto; background: #fff; padding: 10px; border-radius: 5px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+th { background-color: #f9f7f2; }
