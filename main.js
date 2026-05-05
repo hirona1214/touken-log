@@ -149,4 +149,30 @@ onSnapshot(q, (querySnapshot) => {
             }
         }
     });
-});
+
+    // --- モーダルの制御 ---
+const modal = document.getElementById("inputModal");
+const openBtn = document.getElementById("openModalBtn");
+const closeBtn = document.querySelector(".close-btn");
+
+// ＋ボタンを押したら表示
+openBtn.onclick = () => {
+    modal.style.display = "block";
+};
+
+// ×ボタンを押したら閉じる
+closeBtn.onclick = () => {
+    modal.style.display = "none";
+};
+
+// モーダル以外の場所（背景）をクリックしても閉じる
+window.onclick = (event) => {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+};
+
+// 保存に成功したあと、自動で閉じるように saveBtn の処理の最後に以下を追加
+// modal.style.display = "none";
+}
+);

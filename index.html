@@ -3,63 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HONMARU Asset Management</title>
-    
-    <!-- CSSファイルを読み込む -->
+    <title>本丸資材管理</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- グラフ用ライブラリ (これだけはネットから拝借) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>Log System</h1>
-    </header>
+    <div class="container">
+        <!-- ヘッダー部分 -->
+        <header>
+            <h1>資材状況 <button id="openModalBtn" class="plus-btn">+</button></h1>
+        </header>
 
-    <main>
-        <!-- 入力エリア -->
-        <section class="input-section">
-            <div class="field">
-                <label>DATE</label>
+        <!-- グラフを一番上に配置 -->
+        <div class="chart-section">
+            <canvas id="mainChart"></canvas>
+        </div>
+    </div>
+
+    <!-- モーダル（最初は隠れている） -->
+    <div id="inputModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>資材報告</h2>
+            <div class="form-group">
+                <label>日付</label>
                 <input type="date" id="date">
             </div>
-            
-            <div class="field">
-                <label>CHARCOAL (木炭)</label>
+            <div class="form-group">
+                <label>木炭</label>
                 <input type="number" id="charcoal" placeholder="0">
             </div>
-            
-            <div class="field">
-                <label>STEEL (玉鋼)</label>
+            <div class="form-group">
+                <label>玉鋼</label>
                 <input type="number" id="steel" placeholder="0">
             </div>
-            
-            <div class="field">
-                <label>COOLANT (冷却材)</label>
+            <div class="form-group">
+                <label>冷却材</label>
                 <input type="number" id="coolant" placeholder="0">
             </div>
-
-<div class="field">
-    <label>WHETSTONE (砥石)</label>
-    <input type="number" id="whetstone" placeholder="0">
-</div>
-            
-            <button id="saveBtn">RECORD TO CLOUD</button>
-        </section>
-
-        <!-- 表示エリア -->
-        <section class="display-section">
-            <div class="chart-container">
-                <canvas id="mainChart"></canvas>
+            <div class="form-group">
+                <label>砥石</label>
+                <input type="number" id="whetstone" placeholder="0">
             </div>
-        </section>
-    </main>
-</div>
+            <button id="saveBtn" class="submit-btn">RECORD TO CLOUD</button>
+        </div>
+    </div>
 
-<!-- JavaScriptファイルを読み込む (type="module"が重要) -->
-<script type="module" src="main.js"></script>
-
+    <script type="module" src="main.js"></script>
 </body>
 </html>
