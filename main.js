@@ -25,10 +25,30 @@ const coolantInput = document.getElementById('coolant');
 const whetstoneInput = document.getElementById('whetstone');
 const saveBtn = document.getElementById('saveBtn');
 
+// モーダル関連
+const modal = document.getElementById("inputModal");
+const openBtn = document.getElementById("openModalBtn");
+const closeBtn = document.querySelector(".close-btn");
+
 // デフォルトの日付を今日に設定
 dateInput.value = new Date().toISOString().substr(0, 10);
 
-// --- 4. 保存機能 ---
+// --- 4. モーダルの開閉処理 ---
+openBtn.onclick = () => {
+    modal.style.display = "block";
+};
+
+closeBtn.onclick = () => {
+    modal.style.display = "none";
+};
+
+window.onclick = (event) => {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+};
+
+// --- 5. 保存機能 ---
 saveBtn.addEventListener('click', async () => {
     const date = dateInput.value;
     const charcoal = parseInt(charcoalInput.value);
@@ -36,7 +56,6 @@ saveBtn.addEventListener('click', async () => {
     const coolant = parseInt(coolantInput.value);
     const whetstone = parseInt(whetstoneInput.value);
 
-    // 入力チェック
     if (!date || isNaN(charcoal) || isNaN(steel) || isNaN(coolant) || isNaN(whetstone)) {
         alert("すべての数値を入力してください");
         return;
@@ -51,20 +70,23 @@ saveBtn.addEventListener('click', async () => {
             whetstone: whetstone,
             timestamp: new Date()
         });
-        alert("本丸の資材状況をクラウドに保存しました");
         
-        // 入力欄をリセット
+        alert("報告を完了しました");
+        
+        // 入力欄をリセットしてモーダルを閉じる
         charcoalInput.value = "";
         steelInput.value = "";
         coolantInput.value = "";
         whetstoneInput.value = "";
+        modal.style.display = "none";
+
     } catch (e) {
         console.error("Error adding document: ", e);
         alert("保存に失敗しました。");
     }
 });
 
-// --- 5. 取得 & グラフ描画機能 ---
+// --- 6. 取得 & グラフ描画機能 ---
 const ctx = document.getElementById('mainChart').getContext('2d');
 let myChart;
 
@@ -82,7 +104,6 @@ onSnapshot(q, (querySnapshot) => {
         labels.push(data.date);
         charcoalData.push(data.charcoal);
         steelData.push(data.steel);
-        // 過去の2種だけのデータがある場合を考慮して、なければ0を入れる
         coolantData.push(data.coolant || 0);
         whetstoneData.push(data.whetstone || 0);
     });
@@ -132,9 +153,10 @@ onSnapshot(q, (querySnapshot) => {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false, // 画面サイズに合わせる
             plugins: {
                 legend: {
-                    labels: { color: '#888', font: { size: 10 } }
+                    labels: { color: '#888', font: { size: 12 } }
                 }
             },
             scales: {
@@ -149,30 +171,4 @@ onSnapshot(q, (querySnapshot) => {
             }
         }
     });
-
-    // --- モーダルの制御 ---
-const modal = document.getElementById("inputModal");
-const openBtn = document.getElementById("openModalBtn");
-const closeBtn = document.querySelector(".close-btn");
-
-// ＋ボタンを押したら表示
-openBtn.onclick = () => {
-    modal.style.display = "block";
-};
-
-// ×ボタンを押したら閉じる
-closeBtn.onclick = () => {
-    modal.style.display = "none";
-};
-
-// モーダル以外の場所（背景）をクリックしても閉じる
-window.onclick = (event) => {
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-};
-
-// 保存に成功したあと、自動で閉じるように saveBtn の処理の最後に以下を追加
-// modal.style.display = "none";
-}
-);
+});

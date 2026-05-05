@@ -10,43 +10,45 @@
 <body>
 
     <div class="container">
-        <!-- ヘッダー部分 -->
         <header>
-            <h1>資材状況 <button id="openModalBtn" class="plus-btn">+</button></h1>
+            <h1 class="main-title">資材状況</h1>
+            <button id="openModalBtn" class="plus-report-btn">＋報告</button>
         </header>
 
-        <!-- グラフを一番上に配置 -->
-        <div class="chart-section">
+        <div class="chart-container">
             <canvas id="mainChart"></canvas>
         </div>
     </div>
 
-    <!-- モーダル（最初は隠れている） -->
+    <!-- モーダル（報告画面） -->
     <div id="inputModal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2>資材報告</h2>
-            <div class="form-group">
+            <h2 class="modal-title">資材報告</h2>
+            
+            <div class="input-group">
                 <label>日付</label>
                 <input type="date" id="date">
             </div>
-            <div class="form-group">
-                <label>木炭</label>
-                <input type="number" id="charcoal" placeholder="0">
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>木炭</label>
+                    <input type="number" id="charcoal" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>玉鋼</label>
+                    <input type="number" id="steel" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>冷却材</label>
+                    <input type="number" id="coolant" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>砥石</label>
+                    <input type="number" id="whetstone" placeholder="0">
+                </div>
             </div>
-            <div class="form-group">
-                <label>玉鋼</label>
-                <input type="number" id="steel" placeholder="0">
-            </div>
-            <div class="form-group">
-                <label>冷却材</label>
-                <input type="number" id="coolant" placeholder="0">
-            </div>
-            <div class="form-group">
-                <label>砥石</label>
-                <input type="number" id="whetstone" placeholder="0">
-            </div>
-            <button id="saveBtn" class="submit-btn">RECORD TO CLOUD</button>
+            <button id="saveBtn" class="record-btn">RECORD TO CLOUD</button>
         </div>
     </div>
 
