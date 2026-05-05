@@ -3,81 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>本丸資材管理</title>
-    <link rel="stylesheet" href="style.css">
+    <title>資材管理本丸</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js 本体 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chart.js本体の下あたりに追加 -->
+    <!-- 日付を正しく扱うためのアダプター（グラフの比率修正に必要） -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
 
     <header>
-    <h1 class="main-title">資材状況</h1>
-    <div id="userInfo" style="font-size: 0.8rem; color: #666; margin-right: 10px;"></div>
-    <div class="header-btns">
-        <button id="openModalBtn" class="plus-report-btn" style="display: none;">＋報告</button>
-        <button id="editModeBtn" class="edit-btn">修正</button>
-        <button id="loginBtn" class="edit-btn">Googleログイン</button>
-    </div>
-</header>
+        <div class="header-container">
+            <h1 id="userInfo">資材状況</h1>
+            <div class="header-btns">
+                <button id="openModalBtn" style="display: none;">＋報告</button>
+                <button id="editModeBtn">修正</button>
+                <button id="loginBtn">Googleログイン</button>
+            </div>
+        </div>
+    </header>
 
-    <div class="container">
+    <main>
+        <!-- グラフ表示エリア -->
         <div class="chart-container">
             <canvas id="mainChart"></canvas>
         </div>
 
-        <div id="editSection" class="edit-section" style="display: none;">
-            <h3 class="section-title">過去の報告履歴</h3>
-            <div class="table-wrapper">
-                <table id="historyTable">
-                    <thead>
-                        <tr>
-                            <th>日付</th>
-                            <th>木炭</th>
-                            <th>玉鋼</th>
-                            <th>冷却</th>
-                            <th>砥石</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+        <!-- 履歴表示エリア（修正ボタンを押すと表示） -->
+        <section id="editSection" style="display: none;">
+            <h3>履歴管理</h3>
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>日付</th>
+                        <th>木炭</th>
+                        <th>玉鋼</th>
+                        <th>冷却</th>
+                        <th>砥石</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr>
+                        <td colspan="6">ログインするとデータが表示されます</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
 
+    <!-- 報告用モーダル -->
     <div id="inputModal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2 class="modal-title">資材報告</h2>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label>日付</label>
-                    <input type="date" id="date">
-                </div>
-                <div class="input-grid">
-                    <div class="input-group">
-                        <label>木炭</label>
-                        <input type="number" id="charcoal" placeholder="0">
-                    </div>
-                    <div class="input-group">
-                        <label>玉鋼</label>
-                        <input type="number" id="steel" placeholder="0">
-                    </div>
-                    <div class="input-group">
-                        <label>冷却材</label>
-                        <input type="number" id="coolant" placeholder="0">
-                    </div>
-                    <div class="input-group">
-                        <label>砥石</label>
-                        <input type="number" id="whetstone" placeholder="0">
-                    </div>
-                </div>
-                <button id="saveBtn" class="record-btn">RECORD TO CLOUD</button>
+            <h2>資材報告</h2>
+            <div class="input-group">
+                <label>日付</label>
+                <input type="date" id="date">
             </div>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>木炭</label>
+                    <input type="number" id="charcoal" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>玉鋼</label>
+                    <input type="number" id="steel" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>冷却材</label>
+                    <input type="number" id="coolant" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>砥石</label>
+                    <input type="number" id="whetstone" placeholder="0">
+                </div>
+            </div>
+            <button id="saveBtn" class="save-btn">RECORD TO CLOUD</button>
         </div>
     </div>
-    
-    <script type="module" src="main.js"></script>
+
+    <!-- メイン処理 -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
