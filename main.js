@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { GEMINI_API_KEY } from './config.js';
 
 // --- Firebase 設定 ---
 const firebaseConfig = {
@@ -11,6 +12,7 @@ const firebaseConfig = {
     messagingSenderId: "628627612862",
     appId: "1:628627612862:web:c06b91f4fc656064472aef"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -401,3 +403,98 @@ bindClick('loginBtn', () => auth.currentUser ? signOut(auth) : signInWithPopup(a
 
 document.getElementById('filterType')?.addEventListener('change', updateToukenView);
 document.getElementById('filterRarity')?.addEventListener('change', updateToukenView);
+
+// --- AI（Gemini）連携設定 ---
+// APIキーを直接書いていた部分は削除して、インポートした変数を使う
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+// 画像をAIが読める形式（Base64）に変換する補助関数
+async function fileToGenerativePart(file) {
+    const base64EncodedDataPromise = new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+    });
+    return {
+        inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+    };
+}
+
+// 画像が選択された時のメイン処理
+window.handleImageUpload = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const loadingEl = document.getElementById('aiLoading');
+    loadingEl.style.display = 'block';
+
+    try {
+        // AIモデルの準備（画像認識に強いgemini-1.5-flashを使用）
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // AIへの指示（プロンプト）
+        const prompt = `
+            この画像から刀剣男士の名前とレベル(Lv)をすべて抽出してください。
+            結果は必ず以下のJSON形式の配列のみで返してください。余計な解説文は不要です。
+            [{"name": "名前", "lv": 数値}, ...]
+        `;
+
+        const imagePart = await fileToGenerativePart(file);
+        const result = await model.generateContent([prompt, imagePart]);
+        const response = await result.response;
+        const text = response.text();
+        
+        // AIが返した文字列からJSON部分だけを抽出してパース
+        const jsonMatch = text.match(/\[.*\]/s);
+        if (!jsonMatch) throw new Error("解析に失敗しました");
+        const data = JSON.parse(jsonMatch[0]);
+
+        // 解析結果をフォームにセット
+        autoFillLevelForm(data);
+
+    } catch (error) {
+        console.error("AI解析エラー:", error);
+        alert("画像の解析に失敗しました。");
+    } finally {
+        loadingEl.style.display = 'none';
+        input.value = ""; // 同じ画像を再度選べるようにリセット
+    }
+};
+
+// 解析結果を既存の10行フォームに流し込む関数
+function autoFillLevelForm(aiResults) {
+    // 既存の入力行をすべてクリアして、AIの結果の数だけ行を作る
+    const container = document.getElementById('levelInputContainer');
+    container.innerHTML = "";
+    rowCount = 0;
+
+    aiResults.forEach((res, index) => {
+        if (index >= 10) return; // 最大10件まで
+        
+        // 新しい行を追加
+        addInputRow();
+        const rows = document.querySelectorAll('.input-row');
+        const currentRow = rows[rows.length - 1];
+
+        // 名前からマスタデータを検索
+        const master = toukenMaster.find(m => m.name === res.name);
+
+        if (master) {
+            // マスタに存在する場合、刀種・レア度を自動セット
+            const typeSelect = currentRow.querySelector('.type-select');
+            typeSelect.value = master.type;
+            
+            // 刀種が変わったのでレア度と名前の選択肢を更新（既存の関数を再利用）
+            updateRarityOptions(typeSelect);
+            const raritySelect = currentRow.querySelector('.rarity-select');
+            raritySelect.value = master.rarity;
+
+            updateNameOptions(raritySelect);
+            const nameSelect = currentRow.querySelector('.name-select');
+            nameSelect.value = master.name;
+        }
+
+        // レベルをセット
+        currentRow.querySelector('.lv-input').value = res.lv;
+    });
+}

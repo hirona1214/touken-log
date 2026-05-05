@@ -118,13 +118,30 @@
         </div>
     </div>
 
-    <!-- モーダル：レベル登録 -->
+<!-- モーダル：レベル登録 -->
     <div id="levelModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('levelModal')">&times;</span>
             <h2>刀剣レベル登録</h2>
+            
+            <!-- 日付入力 -->
             <input type="date" id="lvDate" class="input-date">
+
+            <!-- ★ここにAIセクションを移動（日付のすぐ下が見やすいです） -->
+            <div class="ai-upload-section">
+                <label class="ai-upload-title">【新機能】スクショから自動入力</label>
+                <input type="file" id="imageUpload" accept="image/*" class="hidden-input" onchange="handleImageUpload(this)">
+                <button type="button" onclick="document.getElementById('imageUpload').click()" class="ai-scan-btn">
+                    📸 スクショを選択して解析
+                </button>
+                <div id="aiLoading" class="ai-status-msg">
+                    AIが解析中...（数秒かかります）
+                </div>
+            </div>
+
+            <!-- 入力フォームエリア -->
             <div id="levelInputContainer"></div>
+            
             <button id="addRowBtn" class="btn-sub">＋行を追加</button>
             <button id="saveLevelBtn" class="btn-save">一括登録</button>
         </div>
