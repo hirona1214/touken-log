@@ -15,24 +15,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 要素取得
-const dateInput = docSnap.getElementById('date');
-const charcoalInput = docSnap.getElementById('charcoal');
-const steelInput = docSnap.getElementById('steel');
-const coolantInput = docSnap.getElementById('coolant');
-const whetstoneInput = docSnap.getElementById('whetstone');
-const saveBtn = docSnap.getElementById('saveBtn');
-const modal = docSnap.getElementById("inputModal");
-const openBtn = docSnap.getElementById("openModalBtn");
-const closeBtn = docSnap.querySelector(".close-btn");
-const editModeBtn = docSnap.getElementById('editModeBtn');
-const editSection = docSnap.getElementById('editSection');
-const historyBody = docSnap.getElementById('historyBody');
+// HTML要素の取得
+const dateInput = document.getElementById('date');
+const charcoalInput = document.getElementById('charcoal');
+const steelInput = document.getElementById('steel');
+const coolantInput = document.getElementById('coolant');
+const whetstoneInput = document.getElementById('whetstone');
+const saveBtn = document.getElementById('saveBtn');
+const modal = document.getElementById("inputModal");
+const openBtn = document.getElementById("openModalBtn");
+const closeBtn = document.querySelector(".close-btn");
+const editModeBtn = document.getElementById('editModeBtn');
+const editSection = document.getElementById('editSection');
+const historyBody = document.getElementById('historyBody');
 
-// 初期値設定
+// 今日の日付をセット
 if(dateInput) dateInput.value = new Date().toISOString().substr(0, 10);
 
-// モーダル制御
+// モーダル表示・非表示
 openBtn.onclick = () => modal.style.display = "block";
 closeBtn.onclick = () => modal.style.display = "none";
 window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
@@ -48,7 +48,7 @@ editModeBtn.onclick = () => {
     }
 };
 
-// 保存
+// 資材データの保存
 saveBtn.addEventListener('click', async () => {
     const data = {
         date: dateInput.value,
@@ -63,14 +63,15 @@ saveBtn.addEventListener('click', async () => {
 
     try {
         await addDoc(collection(db, "resources"), data);
-        alert("報告完了");
+        alert("報告を記録しました");
         modal.style.display = "none";
+        // 入力欄をリセット
         charcoalInput.value = ""; steelInput.value = ""; 
         coolantInput.value = ""; whetstoneInput.value = "";
     } catch (e) { alert("保存に失敗しました"); }
 });
 
-// 取得・描画
+// データのリアルタイム監視と描画
 let myChart;
 const q = query(collection(db, "resources"), orderBy("date", "asc"));
 
@@ -78,14 +79,19 @@ onSnapshot(q, (snapshot) => {
     const labels = [], cData = [], sData = [], coData = [], wData = [];
     historyBody.innerHTML = "";
 
-    snapshot.forEach((docSnap) => {
+    // ★ここが重要！ 引数を (docSnap) にして、ブラウザの document と分ける
+    snapshot.forEach((docSnap) => { 
         const d = docSnap.data();
         const id = docSnap.id;
+        
         labels.push(d.date);
-        cData.push(d.charcoal); sData.push(d.steel);
-        coData.push(d.coolant || 0); wData.push(d.whetstone || 0);
+        cData.push(d.charcoal); 
+        sData.push(d.steel);
+        coData.push(d.coolant || 0); 
+        wData.push(d.whetstone || 0);
 
-        const tr = docSnap.createElement('tr');
+        // テーブル（修正用）の作成
+        const tr = document.createElement('tr'); 
         tr.innerHTML = `
             <td>${d.date.slice(5)}</td>
             <td>${d.charcoal}</td><td>${d.steel}</td>
@@ -95,15 +101,17 @@ onSnapshot(q, (snapshot) => {
         historyBody.appendChild(tr);
     });
 
-    docSnap.querySelectorAll('.delete-btn').forEach(btn => {
+    // 削除ボタンの機能
+    document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.onclick = async (e) => {
-            if (confirm("この記録を削除しますか？")) {
+            if (confirm("この記録を削除してもよろしいですか？")) {
                 await deleteDoc(doc(db, "resources", e.target.dataset.id));
             }
         };
     });
 
-    const ctx = docSnap.getElementById('mainChart');
+    // グラフの描画
+    const ctx = document.getElementById('mainChart');
     if (!ctx) return;
 
     if (myChart) myChart.destroy();
