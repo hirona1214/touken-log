@@ -148,3 +148,83 @@ body {
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
 th { background-color: #f9f7f2; }
+
+/* --- 前回のスタイルに追加 --- */
+
+.tab-menu {
+    display: flex;
+    gap: 5px;
+    margin-left: 30px;
+}
+
+.tab-btn {
+    background: #d1ccc0;
+    border: none;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px 5px 0 0;
+}
+
+.tab-btn.active {
+    background: #5d8e6d;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 10px;
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.filter-group select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+/* ランキング表示 */
+.ranking-container {
+    display: flex;
+    gap: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #d1ccc0;
+}
+
+.ranking-list {
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.ranking-item {
+    padding: 5px 10px;
+    border-left: 4px solid #b54434;
+    background: #f9f7f2;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.ranking-chart {
+    flex: 1;
+    height: 300px;
+}

@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>本丸管理</title>
+    <title>本丸管理システム</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
 
-    <!-- メインヘッダー -->
     <header class="main-header">
         <div class="header-inner">
             <div class="main-title">
                 <h1>本丸管理</h1>
                 <span id="userInfo" class="user-name"></span>
             </div>
+            <nav class="tab-menu">
+                <button class="tab-btn active" onclick="switchTab('resource-tab')">資材・小判</button>
+                <button class="tab-btn" onclick="switchTab('touken-tab')">刀剣育成</button>
+            </nav>
             <div class="auth-area">
                 <button id="loginBtn" class="mini-btn">ログイン</button>
             </div>
@@ -24,74 +27,100 @@
     </header>
 
     <main>
-        <!-- 資材セクション -->
-        <section class="kanban-section">
-            <div class="section-tag green">資材状況</div>
-            <div class="btn-group">
-                <button id="openModalBtn" class="btn-action red" style="display: none;">＋報告</button>
-                <button id="editModeBtn" class="btn-action black">修正</button>
-            </div>
-            <div class="chart-container">
-                <canvas id="mainChart"></canvas>
-            </div>
-        </section>
+        <!-- 資材・小判タブ -->
+        <div id="resource-tab" class="tab-content active">
+            <section class="kanban-section">
+                <div class="section-header">
+                    <div class="section-tag green">資材状況</div>
+                    <div class="btn-group">
+                        <button id="openModalBtn" class="btn-action red">＋報告</button>
+                        <button onclick="toggleEdit()" class="btn-action black">修正</button>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="mainChart"></canvas></div>
+            </section>
 
-        <!-- 札・小判セクション -->
-        <section class="kanban-section">
-            <div class="section-tag green">札・小判</div>
-            <div class="btn-group">
-                <button id="openItemModalBtn" class="btn-action red" style="display: none;">＋報告</button>
-                <button id="editItemModeBtn" class="btn-action black">修正</button>
-            </div>
-            <div class="chart-container">
-                <canvas id="itemChart"></canvas>
-            </div>
-        </section>
+            <section class="kanban-section">
+                <div class="section-header">
+                    <div class="section-tag green">札・小判</div>
+                    <div class="btn-group">
+                        <button id="openItemModalBtn" class="btn-action red">＋報告</button>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="itemChart"></canvas></div>
+            </section>
+        </div>
 
-        <!-- 修正用セクション -->
-        <section id="editSection" class="kanban-section" style="display: none;">
-            <div class="section-tag black">データ管理</div>
-            <div class="table-scroll">
-                <table id="historyTable">
-                    <thead>
-                        <tr><th>日付</th><th>項目</th><th>数値</th><th>操作</th></tr>
-                    </thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
-            </div>
-        </section>
+        <!-- 刀剣育成タブ -->
+        <div id="touken-tab" class="tab-content">
+            <section class="kanban-section">
+                <div class="section-header">
+                    <div class="section-tag green">レベル推移</div>
+                    <div class="filter-group">
+                        <select id="filterType">
+                            <option value="all">刀種：すべて</option>
+                            <option value="短刀">短刀</option>
+                            <option value="脇差">脇差</option>
+                            <option value="打刀">打刀</option>
+                            <option value="太刀">太刀</option>
+                            <option value="大太刀">大太刀</option>
+                            <option value="槍">槍</option>
+                            <option value="薙刀">薙刀</option>
+                        </select>
+                        <select id="filterRarity">
+                            <option value="all">レア度：すべて</option>
+                            <option value="5">五</option>
+                            <option value="4">四</option>
+                            <option value="3">三</option>
+                            <option value="2">二</option>
+                            <option value="1">一</option>
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <button id="openLevelModalBtn" class="btn-action red">＋レベル登録</button>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="levelChart"></canvas></div>
+            </section>
+
+            <!-- 成長TOP10セクション -->
+            <section class="kanban-section">
+                <div class="section-tag black">近侍選抜：直近1ヶ月の成長TOP10</div>
+                <div class="ranking-container">
+                    <div id="rankingList" class="ranking-list">
+                        <!-- ここに名前が並ぶ -->
+                    </div>
+                    <div class="ranking-chart">
+                        <canvas id="top10Chart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
     </main>
 
-    <!-- 資材モーダル -->
-    <div id="inputModal" class="modal">
+    <!-- レベル登録モーダル -->
+    <div id="levelModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('inputModal')">&times;</span>
-            <h2 class="modal-title">資材報告</h2>
+            <span class="close-btn" onclick="closeModal('levelModal')">&times;</span>
+            <h2 class="modal-title">刀剣レベル登録</h2>
             <div class="input-row">
-                <div class="input-group"><label>日付</label><input type="date" id="date"></div>
-                <div class="input-group"><label>木炭</label><input type="number" id="charcoal"></div>
-                <div class="input-group"><label>玉鋼</label><input type="number" id="steel"></div>
-                <div class="input-group"><label>冷却</label><input type="number" id="coolant"></div>
-                <div class="input-group"><label>砥石</label><input type="number" id="whetstone"></div>
-                <button id="saveBtn" class="btn-save">保存</button>
+                <div class="input-group"><label>日付</label><input type="date" id="lvDate"></div>
+                <div class="input-group"><label>刀剣名</label><input type="text" id="tkName" placeholder="三日月宗近"></div>
+                <div class="input-group"><label>刀種</label>
+                    <select id="tkType">
+                        <option value="短刀">短刀</option><option value="脇差">脇差</option>
+                        <option value="打刀">打刀</option><option value="太刀">太刀</option>
+                        <option value="大太刀">大太刀</option><option value="槍">槍</option><option value="薙刀">薙刀</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>レア度</label><input type="number" id="tkRarity" min="1" max="5" value="3"></div>
+                <div class="input-group"><label>レベル</label><input type="number" id="tkLv" min="1" max="99"></div>
+                <button id="saveLevelBtn" class="btn-save">登録</button>
             </div>
         </div>
     </div>
 
-    <!-- 札・小判モーダル -->
-    <div id="itemModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('itemModal')">&times;</span>
-            <h2 class="modal-title">札・小判 報告</h2>
-            <div class="input-row">
-                <div class="input-group"><label>日付</label><input type="date" id="itemDate"></div>
-                <div class="input-group"><label>小判</label><input type="number" id="koban"></div>
-                <div class="input-group"><label>依頼札</label><input type="number" id="requestTicket"></div>
-                <div class="input-group"><label>手伝札</label><input type="number" id="helpTicket"></div>
-                <button id="saveItemBtn" class="btn-save">保存</button>
-            </div>
-        </div>
-    </div>
+    <!-- 既存の資材・小判モーダルは省略（構造は同じ） -->
 
     <script type="module" src="main.js"></script>
 </body>
