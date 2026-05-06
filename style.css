@@ -1,44 +1,74 @@
 :root {
-    --main-bg: #f4f7f6;
-    --card-bg: #ffffff;
-    --accent-green: #2d5d3d; /* 深緑を定義 */
-    --accent-black: #2c3e50;
-    --accent-red: #e74c3c;
+    --main-bg: #0a1128; /* サイト全体の背景：濃紺 */
+    --card-bg: transparent; /* 背景画像を使うため透明に設定 */
+    --accent-gold: #d4af37; /* 金色 */
     --text-color: #333333;
-    --border-color: #e0e0e0;
+    --border-color: #d4af37;
 }
 
 body {
-    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
-    background: var(--main-bg);
-    color: var(--text-color);
-    margin: 0;
-    line-height: 1.6;
+    background-color: var(--main-bg) !important;
+    background-image: none !important; /* bodyの背景画像は解除 */
+    color: #ffffff; /* 全体の基本文字色を白へ（背景が濃いため） */
 }
 
 /* --- ヘッダー --- */
 header {
-    background: var(--accent-black);
-    color: white;
-    padding: 12px 20px;
+    /* 背景色を画像に変更し、中央配置・カバーに設定 */
+    background: url('image/header-bg.png') no-repeat center;
+    background-size: cover;
+    
+    /* 画像の高さに合わせて調整（必要に応じて120px〜180pxで微調整してください） */
+    height: 150px; 
+    
+    color: black;
+    padding: 0 20px; /* 上下パディングを調整 */
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    
+    /* 下部の赤いラインを追加して「本丸」感を出す */
+    border-bottom: 4px solid var(--accent-gold);
 }
 
 .header-left {
     display: flex;
-    align-items: baseline; /* 文字の底辺を揃える */
-    gap: 15px; /* タイトルとユーザー名の間の余白 */
+    align-items: center; 
+    gap: 15px;
 }
 
 .site-title {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 2rem;
     letter-spacing: 3px;
     font-weight: bold;
-    color: #ffffff;
+    color: black;
+    /* 背景画像の上でも文字が見やすいように影を追加 */
+    /* text-shadow: 2px 2px 4px rgba(0,0,0,0.6); */
+}
+
+/* ロゴ画像のスタイル */
+.site-logo {
+    height: 80px; /* ヘッダーの高さ(150px)に合わせて調整 */
+    width: auto;
+    object-fit: contain;
+    /* 必要に応じて影をつけて背景から浮かせます */
+    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.5));
+}
+
+.inner-header-logo{
+    height: 1.5rem; /* ヘッダーの高さ(150px)に合わせて調整 */
+    width: auto;
+    /* object-fit: contain; */
+    /* 必要に応じて影をつけて背景から浮かせます */
+    /* filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.5)); */
+}
+
+#userInfo {
+    font-size: 1rem;
+    font-weight: normal;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
 }
 
 .title-separator {
@@ -61,6 +91,7 @@ header {
     transition: background 0.3s;
 }
 
+
 .btn-auth:hover {
     background: rgba(255, 255, 255, 0.1);
 }
@@ -68,31 +99,44 @@ header {
 /* --- タブメニュー --- */
 .tab-menu {
     display: flex;
-    background: #fff;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 20px;
+    background: transparent; /* 背景を透過[cite: 3] */
+    /* メニュー全体の下に金色のアンダーラインを引く */
+    border-bottom: 3px solid #d4af37; 
+    margin-bottom: 30px;
+    padding: 0 10px;
 }
 
 .tab-btn {
     flex: 1;
+    height: 65px; /* 画像が綺麗に表示される高さに調整（比率に合わせて微調整してください） */
     border: none;
-    padding: 15px;
+    padding: 0; /* 文字位置調整のためpaddingをリセット[cite: 3] */
     cursor: pointer;
-    background: none;
-    font-size: 16px;
+    font-size: 1.1rem;
     font-weight: bold;
-    color: #7f8c8d;
-    transition: all 0.3s;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    transition: all 0.2s;
+    
+    /* 選択されていない状態：背景に section_white、文字を黒に設定 */
+    background-image: url('image/section_white.png');
+    color: #858585;
+}
+
+/* 選択されている時、およびホバーした時 */
+.tab-btn:hover {
+    background-image: url('image/section_white.png') !important;
+    color: #313131 !important;
+    border-bottom: none !important; /* 既存の赤い下線を消す */
 }
 
 .tab-btn.active {
-    color: var(--accent-red);
-    border-bottom: 3px solid var(--accent-red);
+    background-image: url('image/section_pink.png') !important;
+    color: #ffffff !important;
+    border-bottom: none !important; /* 既存の赤い下線を消す */
 }
 
-.tab-btn:hover:not(.active) {
-    background: #f9f9f9;
-}
 
 /* --- メインレイアウト --- */
 main {
@@ -131,6 +175,94 @@ main {
 .green { background: var(--accent-green); }
 
 /* --- グラフ・ランキング --- */
+.chart-section-container {
+    /* 白地の上に bg.png を50%で重ねる */
+    background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), 
+                url('image/bg.png');
+    background-size: cover;
+    border: 2px solid #d4af37;
+    border-radius: 4px; /* ④角を少しだけ四角く */
+    overflow: hidden;
+    margin-bottom: 40px;
+    padding-top: 15px; /* ⑤タイトル上の余白用 */
+}
+
+/* --- 紺色のタイトルヘッダー --- */
+.chart-inner-header {
+    background-color: #0a1128; /* 濃紺 */
+    margin: 0 15px 10px 15px; /* 上左右に余白を作り、白地を見せる */
+    padding: 8px 20px;
+    border-radius: 4px;
+    display: flex;
+    /* justify-content: space-between; */
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.chart-inner-title {
+    color: #ffffff;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    padding-left: 0.5rem; /* タイトルとロゴの間にスペースを空ける */
+    padding-right: 2rem; /* タイトルとボタンの間にスペースを空ける */
+}
+
+/* --- 登録ボタン（btn_pkを使用） --- */
+.btn-pk-style {
+    background-image: url('image/btn_pk.png'); /* 画像を背景に */
+    background-size: 100% 100%;
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-weight: bold;
+    padding: 8px 25px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.btn-pk-style:hover {
+    transform: scale(1.05);
+}
+
+/* --- 期間選択ボタン --- */
+.period-selector {
+    padding: 15px 20px 0;
+    display: flex;
+    gap: 10px;
+}
+
+.period-label {
+    font-size: 0.9rem;
+    color: #555;
+    align-self: center;
+}
+
+.period-btn {
+    background: transparent;
+    border: 1px solid #d4af37;
+    color: #333;
+    padding: 4px 12px;
+    border-radius: 2px; /* ⑥ボタンも少し四角く */
+    font-size: 0.85rem;
+}
+
+/* 選択中（アクティブ）の期間ボタン */
+.period-btn.active {
+    background-color: #B73557; /* ピンク（赤）[cite: 3] */
+    color: #ffffff !important; /* 白字 */
+    border-color: #B73557;
+}
+
+/* --- グラフの余白 --- */
+.chart-inner-body {
+    padding: 10px;
+}
+
+.canvas-wrapper {
+    height: 350px;
+    padding: 10px;
+}
+
 .chart-container {
     background: var(--card-bg);
     padding: 20px;
@@ -179,6 +311,36 @@ main {
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     height: 400px;
+}
+
+.chart-container, 
+.ranking-list-container, 
+.ranking-chart-container {
+    background-image: url('image/bg.png') !important; /* 囲いの中を和紙に[cite: 3] */
+    background-size: cover;
+    background-position: center;
+    
+    border: 2px solid var(--accent-gold) !important; /* 金色の枠線 */
+    border-radius: 12px !important; /* 角を少し丸く[cite: 3] */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* 浮き出し効果 */
+    
+    padding: 20px;
+    margin-bottom: 30px;
+    color: var(--text-color); /* 枠内は黒系の文字色に戻す[cite: 3] */
+}
+
+/* グラフの高さを画像に合わせて調整[cite: 3] */
+.chart-container {
+    height: auto; 
+    min-height: 350px;
+}
+
+/* セクションタイトルの視認性向上[cite: 3, 4] */
+.section-title {
+    color: #ffffff; /* 背景が濃紺なので白文字に[cite: 3] */
+    border-left: 4px solid var(--accent-gold); /* 縦線を金に[cite: 3] */
+    margin-bottom: 15px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
 /* --- モーダル --- */
@@ -389,8 +551,6 @@ body {
 
 h2, h3 {
     color: #2c3e50;
-    border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 8px;
 }
 
 /* --- コンテナ設定 --- */

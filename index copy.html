@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本丸資材・育成管理システム</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1 class="site-title">本丸運営</h1>
+            <span class="title-separator">|</span>
+            <div id="userInfo">(未ログイン)</div>
+        </div>
+        <button id="loginBtn" class="btn-auth">ログイン</button>
+    </header>
+
+    <nav class="tab-menu">
+        <button class="tab-btn active" onclick="switchTab('resourceTab')">資材管理</button>
+        <button class="tab-btn" onclick="switchTab('toukenTab')">刀剣育成</button>
+    </nav>
+
+    <main>
+        <!-- 資材管理タブ -->
+        <section id="resourceTab" class="tab-content active">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title">資材</h2>
+                    <button id="openModalBtn" class="btn-action btn-sm green">登録</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title">札・小判</h2>
+                    <button id="openItemModalBtn" class="btn-action btn-sm green">登録</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="itemChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- 刀剣育成タブ -->
+        <section id="toukenTab" class="tab-content">
+            <div class="btn-group">
+                <button id="openLevelModalBtn" class="btn-action red">＋レベル登録</button>
+                <button id="openLevelEditBtn" class="btn-action black">レベル修正</button>
+            </div>
+
+            <div class="filter-group">
+                <select id="filterType">
+                    <option value="all">すべての刀種</option>
+                    <option value="短刀(極)">短刀(極)</option><option value="脇差(極)">脇差(極)</option>
+                    <option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
+                    <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
+                    <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
+                </select>
+                <select id="filterRarity">
+                    <option value="all">すべてのレア度</option>
+                    <option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                </select>
+                <select id="filterPeriod">
+                    <option value="all">全期間</option>
+                    <option value="1y">1年</option>
+                    <option value="6m">半年</option>
+                    <option value="3m">3か月</option>
+                    <option value="1m">1か月</option>
+                </select>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="levelChart"></canvas>
+            </div>
+
+            <div class="ranking-layout">
+                <div class="ranking-list-container">
+                    <h3>直近30日の成長TOP10</h3>
+                    <div id="rankingList"></div>
+                </div>
+                <div class="ranking-chart-container">
+                    <canvas id="top10Chart"></canvas>
+                </div>
+            </div>
+
+            <hr style="margin: 50px 0 20px; border: none; border-top: 1px solid #ddd;">
+            <div class="master-admin-section">
+                <p style="font-size: 12px; color: #666;">※名簿管理・CSVインポート</p>
+                <div class="btn-group">
+                    <button id="openMasterModalBtn" class="btn-sub">＋名簿に新規登録</button>
+                    <button id="openMasterEditBtn" class="btn-sub">名簿の修正・削除</button>
+                    <!-- ★追加：CSVインポートボタン -->
+                    <button id="openCsvBtn" class="btn-sub" style="background:#2c3e50; color:white;">過去データをCSVから登録</button>
+                    <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- モーダル：資材登録 -->
+    <div id="resourceModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('resourceModal')">&times;</span>
+            <h2>資材登録</h2>
+            <input type="date" id="date" class="input-date">
+            <div class="input-grid">
+                <input type="number" id="charcoal" placeholder="木炭">
+                <input type="number" id="steel" placeholder="玉鋼">
+                <input type="number" id="coolant" placeholder="冷却材">
+                <input type="number" id="whetstone" placeholder="砥石">
+            </div>
+            <button id="saveBtn" class="btn-save">資材を保存</button>
+        </div>
+    </div>
+
+    <!-- モーダル：小判・札登録 -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('itemModal')">&times;</span>
+            <h2>小判・札登録</h2>
+            <input type="date" id="itemDate" class="input-date">
+            <div class="input-grid">
+                <input type="number" id="koban" placeholder="小判">
+                <input type="number" id="requestTicket" placeholder="依頼札">
+                <input type="number" id="helpTicket" placeholder="手伝札">
+            </div>
+            <button id="saveItemBtn" class="btn-save">アイテムを保存</button>
+        </div>
+    </div>
+
+<!-- モーダル：レベル登録 -->
+    <div id="levelModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('levelModal')">&times;</span>
+            <h2>刀剣レベル登録</h2>
+            
+            <!-- 日付入力 -->
+            <input type="date" id="lvDate" class="input-date">
+
+            <!-- ★ここにAIセクションを移動（日付のすぐ下が見やすいです） -->
+            <div class="ai-upload-section">
+                <label class="ai-upload-title">【新機能】スクショから自動入力</label>
+                <input type="file" id="imageUpload" accept="image/*" class="hidden-input" onchange="handleImageUpload(this)">
+                <button type="button" onclick="document.getElementById('imageUpload').click()" class="ai-scan-btn">
+                    📸 スクショを選択して解析
+                </button>
+                <div id="aiLoading" class="ai-status-msg">
+                    AIが解析中...（数秒かかります）
+                </div>
+            </div>
+
+            <!-- 入力フォームエリア -->
+            <div id="levelInputContainer"></div>
+            
+            <button id="addRowBtn" class="btn-sub">＋行を追加</button>
+            <button id="saveLevelBtn" class="btn-save">一括登録</button>
+        </div>
+    </div>
+
+    <!-- モーダル：名簿登録 -->
+    <div id="masterModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('masterModal')">&times;</span>
+            <h2>名簿に新規追加</h2>
+            <input type="text" id="newMasterName" placeholder="刀剣男士の名前">
+            <select id="newMasterType">
+                <option value="短刀(極)">短刀(極)</option><option value="脇差(極)">脇差(極)</option>
+                <option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
+                <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
+                <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
+            </select>
+            <input type="number" id="newMasterRarity" placeholder="レア度(2-6)">
+            <button id="saveMasterBtn" class="btn-save">名簿に登録</button>
+        </div>
+    </div>
+
+    <!-- モーダル：レベル記録の修正 -->
+    <div id="levelEditSection" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('levelEditSection')">&times;</span>
+            <h2>レベル記録の修正</h2>
+            <div id="levelEditList"></div>
+        </div>
+    </div>
+
+    <!-- ★モーダル：名簿（マスタ）の修正・削除（アップグレード版） -->
+    <div id="masterEditSection" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('masterEditSection')">&times;</span>
+            <h2>名簿の管理（修正・削除）</h2>
+            <p style="font-size: 12px; margin-bottom: 15px; color: #666;">
+                内容を書き換えて「更新」を押すと上書きされます。
+            </p>
+            <div id="masterEditList" style="max-height: 450px; overflow-y: auto;">
+                <!-- ここにJavaScriptで編集用フォームが生成されます -->
+            </div>
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

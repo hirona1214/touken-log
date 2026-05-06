@@ -11,11 +11,12 @@
 <body>
     <header>
         <div class="header-left">
-            <h1 class="site-title">本丸運営</h1>
+            <img src="image/logo.png" alt="本丸帳" class="site-logo">
+            <h1 class="site-title">本丸記録帖</h1>
             <span class="title-separator">|</span>
             <div id="userInfo">(未ログイン)</div>
         </div>
-        <button id="loginBtn" class="btn-auth">ログイン</button>
+        <button id="loginBtn" class="btn-pk-style">ログイン</button>
     </header>
 
     <nav class="tab-menu">
@@ -25,23 +26,52 @@
 
     <main>
         <!-- 資材管理タブ -->
+<!-- 資材管理タブの例（刀剣育成タブも同様の構造にできます） -->
         <section id="resourceTab" class="tab-content active">
-            <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title">資材</h2>
-                    <button id="openModalBtn" class="btn-action btn-sm green">登録</button>
+            <div class="chart-section-container">
+                <!-- 紺背景のヘッダーエリア -->
+                <div class="chart-inner-header">
+                    <img src="image/logo.png" class="inner-header-logo">
+                    <h2 class="chart-inner-title">資材</h2>
+                    <button id="openModalBtn" class="btn-pk-style">登録</button>
                 </div>
-                <div class="chart-container">
-                    <canvas id="mainChart"></canvas>
+                
+                <!-- コンテンツエリア-->
+                <div class="chart-inner-body">
+                    <!-- 期間選択ボタン -->
+                    <div class="period-selector">
+                        <button class="period-btn active" data-period="all">全期間</button>
+                        <button class="period-btn" data-period="1y">1年</button>
+                        <button class="period-btn" data-period="6m">半年</button>
+                        <button class="period-btn" data-period="3m">3か月</button>
+                        <button class="period-btn" data-period="1m">1か月</button>
+                    </div>
+                    
+                    <div class="canvas-wrapper">
+                        <canvas id="mainChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title">札・小判</h2>
-                    <button id="openItemModalBtn" class="btn-action btn-sm green">登録</button>
+            </div>    
+            <div class="chart-section-container">
+                <!-- 紺背景のヘッダーエリア -->
+                <div class="chart-inner-header">
+                    <h2 class="chart-inner-title">小判・札</h2>
+                    <button id="openModalBtn" class="btn-pk-style">登録</button>
                 </div>
-                <div class="chart-container">
-                    <canvas id="itemChart"></canvas>
+                
+                <!-- コンテンツエリア-->
+                <div class="chart-inner-body">
+                    <!-- 期間選択ボタン -->
+                    <div class="period-selector">
+                        <button class="period-btn active" data-period="all">全期間</button>
+                        <button class="period-btn" data-period="1y">1年</button>
+                        <button class="period-btn" data-period="6m">半年</button>
+                        <button class="period-btn" data-period="3m">3か月</button>
+                        <button class="period-btn" data-period="1m">1か月</button>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="itemChart"></canvas>
+                    </div>
                 </div>
             </div>
         </section>

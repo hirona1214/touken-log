@@ -25,6 +25,9 @@ let charts = {};
 let rawToukenData = [];
 let toukenMaster = [];
 let rowCount = 0;
+let rawResourceData = [];
+let rawItemData = [];
+let resourcePeriod = 'all';
 
 // --- 認証状態の監視 ---
 onAuthStateChanged(auth, (user) => {
@@ -66,30 +69,19 @@ function loadToukenData(uid) {
 
 function loadResourceData(uid) {
     onSnapshot(query(collection(db, "users", uid, "resources"), orderBy("date", "asc")), (snapshot) => {
-        const labels = [];
-        const datasets = { charcoal: [], steel: [], coolant: [], whetstone: [] };
+        rawResourceData = [];
         snapshot.forEach(doc => {
-            const d = doc.data();
-            labels.push(d.date);
-            datasets.charcoal.push(d.charcoal);
-            datasets.steel.push(d.steel);
-            datasets.coolant.push(d.coolant);
-            datasets.whetstone.push(d.whetstone);
+            rawResourceData.push({ id: doc.id, ...doc.data() });
         });
-        renderChart('mainChart', labels, datasets);
+        updateResourceView();
     });
 
     onSnapshot(query(collection(db, "users", uid, "items"), orderBy("date", "asc")), (snapshot) => {
-        const labels = [];
-        const datasets = { koban: [], requestTicket: [], helpTicket: [] };
+        rawItemData = [];
         snapshot.forEach(doc => {
-            const d = doc.data();
-            labels.push(d.date);
-            datasets.koban.push(d.koban);
-            datasets.requestTicket.push(d.requestTicket);
-            datasets.helpTicket.push(d.helpTicket);
+            rawItemData.push({ id: doc.id, ...doc.data() });
         });
-        renderChart('itemChart', labels, datasets);
+        updateResourceView();
     });
 }
 
@@ -201,61 +193,185 @@ function getStartDate(period) {
     return now.toISOString().split('T')[0];
 }
 
+function filterByPeriod(data, period) {
+    const startDateStr = getStartDate(period);
+    if (!startDateStr) return data;
+
+    return data.filter(d => d.date >= startDateStr);
+}
+
+function updateResourceView() {
+    const filteredResources = filterByPeriod(rawResourceData, resourcePeriod);
+    const resourceLabels = [];
+    const resourceDatasets = {
+        charcoal: [],
+        steel: [],
+        coolant: [],
+        whetstone: []
+    };
+
+    filteredResources.forEach(d => {
+        resourceLabels.push(d.date);
+        resourceDatasets.charcoal.push(d.charcoal);
+        resourceDatasets.steel.push(d.steel);
+        resourceDatasets.coolant.push(d.coolant);
+        resourceDatasets.whetstone.push(d.whetstone);
+    });
+
+    renderChart('mainChart', resourceLabels, resourceDatasets, resourcePeriod);
+
+    const filteredItems = filterByPeriod(rawItemData, resourcePeriod);
+    const itemLabels = [];
+    const itemDatasets = {
+        koban: [],
+        requestTicket: [],
+        helpTicket: []
+    };
+
+    filteredItems.forEach(d => {
+        itemLabels.push(d.date);
+        itemDatasets.koban.push(d.koban);
+        itemDatasets.requestTicket.push(d.requestTicket);
+        itemDatasets.helpTicket.push(d.helpTicket);
+    });
+
+    renderChart('itemChart', itemLabels, itemDatasets, resourcePeriod);
+}
+
 // --- 刀剣グラフ更新 (期間フィルタ反映) ---
 function updateToukenView() {
+    const period = document.getElementById('filterPeriod')?.value || 'all';
+    const startDateStr = getStartDate(period);
+    const startDate = startDateStr ? new Date(startDateStr) : null;
     const todayStr = new Date().toISOString().split('T')[0];
+    
     const typeFilter = document.getElementById('filterType')?.value || 'all';
     const rarityFilter = document.getElementById('filterRarity')?.value || 'all';
-    const periodFilter = document.getElementById('filterPeriod')?.value || 'all';
     
-    const startDate = getStartDate(periodFilter);
-    const grouped = {};
-
+    const swordGroups = {};
     rawToukenData.forEach(d => {
-        const isMatchFilter = (typeFilter === 'all' || d.type === typeFilter) && (rarityFilter === 'all' || d.rarity == rarityFilter);
-        const isMatchPeriod = (!startDate || d.date >= startDate);
-
-        if (isMatchFilter && isMatchPeriod) {
-            if (!grouped[d.name]) grouped[d.name] = { labels: [], values: [] };
-            grouped[d.name].labels.push(d.date);
-            grouped[d.name].values.push(d.lv);
+        if ((typeFilter === 'all' || d.type === typeFilter) && (rarityFilter === 'all' || d.rarity == rarityFilter)) {
+            if (!swordGroups[d.name]) swordGroups[d.name] = [];
+            swordGroups[d.name].push({ x: d.date, y: d.lv });
         }
     });
 
-    const datasets = Object.keys(grouped).map(name => {
-        const labels = grouped[name].labels;
-        const values = grouped[name].values;
-        const lastDate = labels[labels.length - 1];
-        const lastValue = values[values.length - 1];
-        const chartData = labels.map((date, i) => ({ x: date, y: values[i] }));
-        if (lastDate < todayStr) chartData.push({ x: todayStr, y: lastValue }); 
-        return { label: name, data: chartData, borderColor: stringToColor(name), tension: 0.1, fill: false };
+    const datasets = Object.keys(swordGroups).map(name => {
+        let history = swordGroups[name].sort((a, b) => a.x.localeCompare(b.x));
+        let chartData = [];
+
+        // --- ここが重要：期間内のデータのみを抽出する ---
+        if (startDateStr) {
+            // 1. 期間開始時のレベルを計算して「開始点」を作る
+            const startLv = getInterpolatedLevel(history.map(h => ({date: h.x, lv: h.y})), startDate);
+            if (startLv !== null) {
+                chartData.push({ x: startDateStr, y: startLv });
+            }
+            // 2. 期間内の実データだけを追加する[cite: 6]
+            const inPeriodData = history.filter(h => h.x > startDateStr);
+            chartData = [...chartData, ...inPeriodData];
+        } else {
+            // 全期間の場合はそのまま[cite: 6]
+            chartData = [...history];
+        }
+
+        // 最新日の補完
+        const last = chartData[chartData.length - 1];
+        if (last && last.x < todayStr) {
+            chartData.push({ x: todayStr, y: last.y });
+        }
+
+        return {
+            label: name,
+            data: chartData,
+            borderColor: stringToColor(name),
+            backgroundColor: stringToColor(name),
+            tension: 0.1,
+            fill: false
+        };
     });
 
-    renderToukenChart('levelChart', datasets, startDate);
+    // フィルタリング後のデータのみを渡す
+    renderToukenChart('levelChart', datasets, startDateStr);
 }
-
 // --- チャート描画関数 ---
-function renderChart(id, labels, dataObj) {
+// --- チャート描画関数（資材・小判用） ---
+function renderChart(id, labels, dataObj, period = 'all') {
     const ctx = document.getElementById(id);
     if (!ctx) return;
     if (charts[id]) charts[id].destroy();
-    const labelNames = { charcoal: '木炭', steel: '玉鋼', coolant: '冷却材', whetstone: '砥石', koban: '小判', requestTicket: '依頼札', helpTicket: '手伝い札' };
-    const colors = { charcoal: '#b54434', steel: '#7f8c8d', coolant: '#3498db', whetstone: '#27ae60', koban: '#f1c40f', requestTicket: '#9b59b6', helpTicket: '#e74c3c' };
-    const datasetArr = Object.keys(dataObj).map(key => ({ label: labelNames[key] || key, data: dataObj[key], borderColor: colors[key], backgroundColor: colors[key], yAxisID: (id === 'itemChart' && key !== 'koban') ? 'y1' : 'y' }));
-    charts[id] = new Chart(ctx, { type: 'line', data: { labels, datasets: datasetArr }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' } }, y: { type: 'linear', display: true, position: 'left' }, y1: { type: 'linear', display: id === 'itemChart', position: 'right', grid: { drawOnChartArea: false } } } } });
+
+    const labelNames = { 
+        charcoal: '木炭', steel: '玉鋼', coolant: '冷却材', whetstone: '砥石', 
+        koban: '小判', requestTicket: '依頼札', helpTicket: '手伝い札' 
+    };
+    const colors = { 
+        charcoal: '#b54434', steel: '#7f8c8d', coolant: '#3498db', whetstone: '#27ae60', 
+        koban: '#f1c40f', requestTicket: '#9b59b6', helpTicket: '#e74c3c' 
+    };
+
+    const datasetArr = Object.keys(dataObj).map(key => ({
+        label: labelNames[key] || key,
+        data: dataObj[key],
+        borderColor: colors[key],
+        backgroundColor: colors[key],
+        // 小判以外（札系）は右側の軸(y1)を使用
+        yAxisID: (id === 'itemChart' && key !== 'koban') ? 'y1' : 'y',
+        tension: 0.1,
+        fill: false
+    }));
+
+    charts[id] = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: datasetArr },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' } // 凡例を下へ
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { 
+                        unit: 'day',
+                        displayFormats: { day: 'yyyy/MM/dd' } // 西暦表示[cite: 6]
+                    }
+                },
+                y: { type: 'linear', display: true, position: 'left' },
+                y1: { 
+                    type: 'linear', 
+                    display: id === 'itemChart', 
+                    position: 'right', 
+                    grid: { drawOnChartArea: false } 
+                }
+            }
+        }
+    });
 }
 
 function renderToukenChart(id, datasets, minDate) {
     const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
+    if (!ctx || charts[id]) charts[id]?.destroy();
     charts[id] = new Chart(ctx, {
-        type: 'line', 
-        data: { datasets: datasets.map(ds => ({ ...ds, backgroundColor: ds.borderColor })) },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            scales: { x: { type: 'time', time: { unit: 'day' }, min: minDate } } 
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' } // ②凡例を下側へ[cite: 5]
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { 
+                        unit: 'day',
+                        displayFormats: { day: 'yyyy/MM/dd' }
+                    },
+                    min: getStartDate(period)
+                },
+            }
         }
     });
 }
@@ -353,8 +469,30 @@ function renderEditList() {
 
 window.deleteLevelRecord = async (docId) => { if (confirm("削除しますか？")) await deleteDoc(doc(db, "users", auth.currentUser.uid, "touken", docId)); };
 function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); let color = '#'; for (let i = 0; i < 3; i++) color += ('00' + ((hash >> (i * 8)) & 0xFF).toString(16)).substr(-2); return color; }
-window.switchTab = (id) => { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); };
+// window.switchTab = (id) => { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); };
 window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
+
+window.switchTab = function(tabId) {
+    // 1. すべてのタブコンテンツを非表示にする
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // 2. すべてのタブボタンから 'active' クラスを除去する
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // 3. 選択されたコンテンツを表示する
+    document.getElementById(tabId).classList.add('active');
+
+    // 4. クリックされたボタン自身に 'active' クラスを付与する
+    // onclick="switchTab('resourceTab')" の呼び出し元を特定してクラスを付与
+    const clickedBtn = event.currentTarget;
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    }
+};
 
 // --- イベントバインド ---
 const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
@@ -406,3 +544,14 @@ function autoFillLevelForm(results) {
         currentRow.querySelector('.lv-input').value = res.lv;
     });
 }
+
+document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+
+        resourcePeriod = e.target.dataset.period;
+        updateResourceView();
+    });
+});
+
