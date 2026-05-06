@@ -10,7 +10,11 @@
 </head>
 <body>
     <header>
-        <div id="userInfo">(未ログイン)</div>
+        <div class="header-left">
+            <h1 class="site-title">本丸運営</h1>
+            <span class="title-separator">|</span>
+            <div id="userInfo">(未ログイン)</div>
+        </div>
         <button id="loginBtn" class="btn-auth">ログイン</button>
     </header>
 
@@ -22,22 +26,29 @@
     <main>
         <!-- 資材管理タブ -->
         <section id="resourceTab" class="tab-content active">
-            <div class="btn-group">
-                <button id="openModalBtn" class="btn-action red">＋資材登録</button>
-                <button id="openItemModalBtn" class="btn-action black">＋小判・札登録</button>
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title">資材</h2>
+                    <button id="openModalBtn" class="btn-action btn-sm green">登録</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
             </div>
-            <div class="chart-container">
-                <canvas id="mainChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <canvas id="itemChart"></canvas>
+            <div class="section-container">
+                <div class="section-header">
+                    <h2 class="section-title">札・小判</h2>
+                    <button id="openItemModalBtn" class="btn-action btn-sm green">登録</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="itemChart"></canvas>
+                </div>
             </div>
         </section>
 
         <!-- 刀剣育成タブ -->
         <section id="toukenTab" class="tab-content">
             <div class="btn-group">
-                <!-- 登録ボタンは赤、修正ボタンは黒 -->
                 <button id="openLevelModalBtn" class="btn-action red">＋レベル登録</button>
                 <button id="openLevelEditBtn" class="btn-action black">レベル修正</button>
             </div>
@@ -45,19 +56,22 @@
             <div class="filter-group">
                 <select id="filterType">
                     <option value="all">すべての刀種</option>
-                    <option value="短刀(極)">短刀(極)</option>
-                    <option value="脇差(極)">脇差(極)</option>
-                    <option value="打刀(極)">打刀(極)</option>
-                    <option value="太刀(極)">太刀(極)</option>
-                    <option value="大太刀(極)">大太刀(極)</option>
-                    <option value="槍(極)">槍(極)</option>
-                    <option value="薙刀(極)">薙刀(極)</option>
-                    <option value="剣(極)">剣(極)</option>
+                    <option value="短刀(極)">短刀(極)</option><option value="脇差(極)">脇差(極)</option>
+                    <option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
+                    <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
+                    <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
                 </select>
                 <select id="filterRarity">
                     <option value="all">すべてのレア度</option>
-                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                    <option value="4">4</option><option value="5">5</option>
+                    <option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                </select>
+                <select id="filterPeriod">
+                    <option value="all">全期間</option>
+                    <option value="1y">1年</option>
+                    <option value="6m">半年</option>
+                    <option value="3m">3か月</option>
+                    <option value="1m">1か月</option>
                 </select>
             </div>
 
@@ -75,13 +89,15 @@
                 </div>
             </div>
 
-            <!-- ★画面最下部に名簿管理エリアを新設 -->
             <hr style="margin: 50px 0 20px; border: none; border-top: 1px solid #ddd;">
             <div class="master-admin-section">
-                <p style="font-size: 12px; color: #666;">※名簿（マスタ）の追加・修正はこちら</p>
+                <p style="font-size: 12px; color: #666;">※名簿管理・CSVインポート</p>
                 <div class="btn-group">
                     <button id="openMasterModalBtn" class="btn-sub">＋名簿に新規登録</button>
                     <button id="openMasterEditBtn" class="btn-sub">名簿の修正・削除</button>
+                    <!-- ★追加：CSVインポートボタン -->
+                    <button id="openCsvBtn" class="btn-sub" style="background:#2c3e50; color:white;">過去データをCSVから登録</button>
+                    <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
                 </div>
             </div>
         </section>
@@ -159,7 +175,7 @@
                 <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
                 <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
             </select>
-            <input type="number" id="newMasterRarity" placeholder="レア度(1-5)">
+            <input type="number" id="newMasterRarity" placeholder="レア度(2-6)">
             <button id="saveMasterBtn" class="btn-save">名簿に登録</button>
         </div>
     </div>

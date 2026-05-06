@@ -1,8 +1,9 @@
 :root {
     --main-bg: #f4f7f6;
     --card-bg: #ffffff;
-    --accent-red: #b54434;
+    --accent-green: #2d5d3d; /* 深緑を定義 */
     --accent-black: #2c3e50;
+    --accent-red: #e74c3c;
     --text-color: #333333;
     --border-color: #e0e0e0;
 }
@@ -15,14 +16,39 @@ body {
     line-height: 1.6;
 }
 
+/* --- ヘッダー --- */
 header {
     background: var(--accent-black);
     color: white;
-    padding: 10px 20px;
+    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline; /* 文字の底辺を揃える */
+    gap: 15px; /* タイトルとユーザー名の間の余白 */
+}
+
+.site-title {
+    margin: 0;
+    font-size: 1.4rem;
+    letter-spacing: 3px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.title-separator {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1.2rem;
+}
+
+#userInfo {
+    font-size: 1rem;
+    font-weight: normal;
 }
 
 .btn-auth {
@@ -32,8 +58,14 @@ header {
     padding: 5px 15px;
     cursor: pointer;
     border-radius: 4px;
+    transition: background 0.3s;
 }
 
+.btn-auth:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* --- タブメニュー --- */
 .tab-menu {
     display: flex;
     background: #fff;
@@ -50,6 +82,7 @@ header {
     font-size: 16px;
     font-weight: bold;
     color: #7f8c8d;
+    transition: all 0.3s;
 }
 
 .tab-btn.active {
@@ -57,6 +90,11 @@ header {
     border-bottom: 3px solid var(--accent-red);
 }
 
+.tab-btn:hover:not(.active) {
+    background: #f9f9f9;
+}
+
+/* --- メインレイアウト --- */
 main {
     max-width: 1200px;
     margin: 0 auto;
@@ -74,30 +112,25 @@ main {
 }
 
 .btn-action {
-    padding: 10px 20px;
+    padding: 10px 25px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     color: white;
     font-weight: bold;
-    transition: opacity 0.2s;
+    transition: transform 0.1s, opacity 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-action:active {
+    transform: translateY(2px);
 }
 
 .red { background: var(--accent-red); }
 .black { background: var(--accent-black); }
+.green { background: var(--accent-green); }
 
-.filter-group {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.filter-group select {
-    padding: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-}
-
+/* --- グラフ・ランキング --- */
 .chart-container {
     background: var(--card-bg);
     padding: 20px;
@@ -116,7 +149,7 @@ main {
 
 .ranking-list-container {
     flex: 1;
-    min-width: 200px;
+    min-width: 250px;
     background: var(--card-bg);
     padding: 20px;
     border-radius: 8px;
@@ -132,7 +165,7 @@ main {
 }
 
 .ranking-item {
-    padding: 10px 0;
+    padding: 12px 0;
     border-bottom: 1px dashed #eee;
     font-size: 14px;
     display: flex;
@@ -148,6 +181,7 @@ main {
     height: 400px;
 }
 
+/* --- モーダル --- */
 .modal {
     display: none;
     position: fixed;
@@ -164,9 +198,11 @@ main {
     margin: 5% auto;
     padding: 30px;
     width: 90%;
-    max-width: 550px;
+    max-width: 600px;
     border-radius: 12px;
     position: relative;
+    max-height: 85vh;
+    overflow-y: auto;
 }
 
 .close-btn {
@@ -188,6 +224,7 @@ main {
     box-sizing: border-box;
 }
 
+/* --- 入力グリッド・行 --- */
 .input-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -226,6 +263,11 @@ main {
     font-weight: bold;
     border-radius: 6px;
     cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-save:hover {
+    background: #963528;
 }
 
 .btn-sub {
@@ -253,35 +295,16 @@ main {
     padding: 0;
 }
 
-#levelInputContainer {
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 5px;
-    margin-bottom: 15px;
-}
-
-/* ★名簿管理用リスト */
-.edit-item span { font-size: 14px; }
-.edit-item small { color: #666; }
-
-@media (max-width: 768px) {
-    .ranking-layout { flex-direction: column; }
-    .ranking-list-container { max-width: 100%; width: 100%; }
-    .input-row { grid-template-columns: 1fr 1fr; }
-}
-
-
-/* AIアップロードセクションの外枠 */
+/* --- AIアップロード --- */
 .ai-upload-section {
     margin: 15px 0;
     padding: 15px;
     background-color: #f8f9fa;
-    border: 1px dashed #3498db;
+    border: 2px dashed #3498db;
     border-radius: 8px;
     text-align: center;
 }
 
-/* タイトルラベル */
 .ai-upload-title {
     display: block;
     font-weight: bold;
@@ -290,12 +313,8 @@ main {
     color: #2c3e50;
 }
 
-/* ファイル入力を隠す */
-.hidden-input {
-    display: none;
-}
+.hidden-input { display: none; }
 
-/* 解析ボタン */
 .ai-scan-btn {
     background-color: #3498db;
     color: white;
@@ -305,16 +324,10 @@ main {
     cursor: pointer;
     font-size: 14px;
     width: 100%;
-    transition: background 0.3s ease;
 }
 
-.ai-scan-btn:hover {
-    background-color: #2980b9;
-}
-
-/* ローディング・ステータス表示 */
 .ai-status-msg {
-    display: none; /* 初期状態は非表示 */
+    display: none;
     margin-top: 10px;
     color: #3498db;
     font-size: 12px;
@@ -322,9 +335,138 @@ main {
     animation: blink 1.5s infinite;
 }
 
-/* 読み込み中のふわふわしたアニメーション */
 @keyframes blink {
     0% { opacity: 1; }
     50% { opacity: 0.5; }
     100% { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .ranking-layout { flex-direction: column; }
+    .input-row { grid-template-columns: 1fr 1fr; }
+    .header-left { flex-direction: column; gap: 5px; }
+    .title-separator { display: none; }
+}
+
+/* タイトル横の線の色も変更 */
+.section-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--accent-black);
+    border-left: 4px solid var(--accent-green); /* ここを深緑に */
+    padding-left: 10px;
+}
+
+/* タブの活性色も深緑に合わせると統一感が出ます */
+.tab-btn.active {
+    color: var(--accent-green);
+    border-bottom: 3px solid var(--accent-green);
+}
+
+#top10Chart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* --- 変数定義 --- */
+:root {
+    --primary-color: #4a90e2;
+    --bg-color: #f5f7fa;
+    --card-bg: #ffffff;
+    --text-color: #333;
+    --border-color: #e1e4e8;
+}
+
+/* --- 全体レイアウト --- */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+}
+
+h2, h3 {
+    color: #2c3e50;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 8px;
+}
+
+/* --- コンテナ設定 --- */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- ランキング・グラフセクション --- */
+.ranking-layout {
+    display: flex;
+    flex-direction: row; /* 横並び */
+    gap: 20px;           /* 要素間の隙間 */
+    margin-top: 30px;
+    align-items: stretch; /* 左右の高さを揃える */
+}
+
+/* 左側：リストコンテナ */
+.ranking-list-container {
+    flex: 0 0 350px;    /* 幅を350pxで固定 */
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow-y: auto;   /* リストが長すぎる場合にスクロール */
+}
+
+/* 右側：グラフコンテナ */
+.ranking-chart-container {
+    flex: 1;            /* 残りの幅をすべて使用 */
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    min-height: 450px;  /* グラフの表示領域を確保 */
+    position: relative; /* Chart.jsのレスポンシブ対応に必要 */
+}
+
+/* --- リスト内のスタイル --- */
+#rankingList {
+    list-style: none;
+    padding: 0;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ranking-item:last-child {
+    border-bottom: none;
+}
+
+.rank-number {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-right: 10px;
+}
+
+/* --- レスポンシブ対応 (画面幅が狭い場合) --- */
+@media (max-width: 900px) {
+    .ranking-layout {
+        flex-direction: column; /* 縦並びに変更 */
+    }
+
+    .ranking-list-container {
+        flex: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .ranking-chart-container {
+        width: 100%;
+        height: 350px; /* モバイル用の高さ */
+        box-sizing: border-box;
+    }
 }

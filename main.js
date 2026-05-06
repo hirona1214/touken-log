@@ -1,12 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-// import { GEMINI_API_KEY } from './config.js';
+import { GEMINI_API_KEY } from './config.js';
 
-// import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@latest";
-import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.12.0";
-const API_KEY = "AIzaSyCiN_Cv7l4ekimnBTmyAemPOPoh5kHOXkk"; 
-const genAI = new GoogleGenerativeAI(API_KEY);
+// --- Gemini API 設定 ---
+// const GEMINI_API_KEY = "AIzaSyArZk5fhj9coNM_B4abYJvWP0lwo1MmFuY";
 
 // --- Firebase 設定 ---
 const firebaseConfig = {
@@ -17,7 +15,6 @@ const firebaseConfig = {
     messagingSenderId: "628627612862",
     appId: "1:628627612862:web:c06b91f4fc656064472aef"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -96,55 +93,178 @@ function loadResourceData(uid) {
     });
 }
 
+// --- CSVインポート機能 ---
+window.handleCsvUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const user = auth.currentUser;
+    if (!user) return alert("ログインしてください");
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/);
+        const dateVal = prompt("登録する日付を入力してください (YYYY-MM-DD)", new Date().toISOString().split('T')[0]);
+        if (!dateVal) return;
+
+        let successCount = 0;
+        let skipCount = 0;
+        for (let line of lines) {
+            if (!line.trim()) continue;
+            const [name, lvStr] = line.split(',').map(s => s.trim());
+            const lv = parseInt(lvStr);
+            if (!name || isNaN(lv)) { skipCount++; continue; }
+
+            const master = toukenMaster.find(m => m.name === name || name.includes(m.name));
+            if (master) {
+                await addDoc(collection(db, "users", user.uid, "touken"), {
+                    date: dateVal, name: master.name, lv: lv, type: master.type, rarity: master.rarity, timestamp: new Date()
+                });
+                successCount++;
+            } else { skipCount++; }
+        }
+        alert(`インポート完了！\n登録: ${successCount}振り\nスキップ: ${skipCount}件`);
+        event.target.value = ""; 
+    };
+    reader.readAsText(file);
+};
+
 // --- ランキング計算 ---
 function calculateGrowthRanking() {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
     const stats = {};
     rawToukenData.forEach(d => {
         if (!stats[d.name]) stats[d.name] = [];
         stats[d.name].push({ date: d.date, lv: d.lv });
     });
+
     const ranking = [];
     Object.keys(stats).forEach(name => {
         const history = stats[name].sort((a, b) => a.date.localeCompare(b.date));
-        const recentRecords = history.filter(h => h.date >= dateStr);
-        if (recentRecords.length >= 2) {
-            const first = recentRecords[0];
-            const last = recentRecords[recentRecords.length - 1];
-            const diff = last.lv - first.lv;
-            if (diff > 0) ranking.push({ name, diff, history: recentRecords });
+        if (history.length < 2) return;
+        const lv30DaysAgo = getInterpolatedLevel(history, thirtyDaysAgo);
+        if (lv30DaysAgo === null) return;
+        const lvNow = history[history.length - 1].lv;
+        const diff = Math.floor(lvNow - lv30DaysAgo);
+        if (diff > 0) {
+            ranking.push({ name, diff, history: [{ date: thirtyDaysAgo.toISOString().split('T')[0], lv: lv30DaysAgo }, ...history.filter(h => new Date(h.date) > thirtyDaysAgo), { date: todayStr, lv: lvNow }] });
         }
     });
+
     ranking.sort((a, b) => b.diff - a.diff);
     const top10 = ranking.slice(0, 10);
     const listEl = document.getElementById('rankingList');
     if (listEl) {
-        listEl.innerHTML = top10.length ? top10.map((item, i) => `
-            <div class="ranking-item">
-                <strong>${i + 1}位: ${item.name}</strong> 
-                <span style="color:#b54434;">(+${item.diff})</span>
-            </div>
-        `).join('') : '<p>データ不足です</p>';
+        listEl.innerHTML = top10.length ? top10.map((item, i) => `<div class="ranking-item"><strong>${i + 1}位: ${item.name}</strong> <span style="color:#b54434;">(+${item.diff} Lv)</span></div>`).join('') : '<p>データ不足です</p>';
     }
-    const top10Datasets = top10.map(item => ({
-        label: item.name,
-        data: item.history.map(h => ({ x: h.date, y: h.lv })),
-        borderColor: stringToColor(item.name),
-        tension: 0.1, fill: false
-    }));
+    const top10Datasets = top10.map(item => ({ label: item.name, data: item.history.map(h => ({ x: h.date, y: h.lv })), borderColor: stringToColor(item.name), backgroundColor: stringToColor(item.name), tension: 0.1, fill: false }));
     renderToukenChart('top10Chart', top10Datasets);
 }
 
-// --- 名簿（マスタ）の修正・削除・更新機能 ---
+function getInterpolatedLevel(history, targetDate) {
+    const targetTime = targetDate.getTime();
+    const firstLog = history[0];
+    const lastLog = history[history.length - 1];
+    const firstTime = new Date(firstLog.date).getTime();
+    const lastTime = new Date(lastLog.date).getTime();
+    if (targetTime < firstTime) return null;
+    if (targetTime >= lastTime) return lastLog.lv;
+    for (let i = 0; i < history.length - 1; i++) {
+        const start = history[i];
+        const end = history[i + 1];
+        const startTime = new Date(start.date).getTime();
+        const endTime = new Date(end.date).getTime();
+        if (targetTime >= startTime && targetTime <= endTime) {
+            const timeDiff = endTime - startTime;
+            const lvDiff = end.lv - start.lv;
+            const progress = (targetTime - startTime) / timeDiff;
+            return start.lv + (lvDiff * progress);
+        }
+    }
+    return null;
+}
+
+// --- 期間フィルタリング用ヘルパー ---
+function getStartDate(period) {
+    const now = new Date();
+    switch (period) {
+        case '1y': now.setFullYear(now.getFullYear() - 1); break;
+        case '6m': now.setMonth(now.getMonth() - 6); break;
+        case '3m': now.setMonth(now.getMonth() - 3); break;
+        case '1m': now.setMonth(now.getMonth() - 1); break;
+        case 'all': return null;
+    }
+    return now.toISOString().split('T')[0];
+}
+
+// --- 刀剣グラフ更新 (期間フィルタ反映) ---
+function updateToukenView() {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const typeFilter = document.getElementById('filterType')?.value || 'all';
+    const rarityFilter = document.getElementById('filterRarity')?.value || 'all';
+    const periodFilter = document.getElementById('filterPeriod')?.value || 'all';
+    
+    const startDate = getStartDate(periodFilter);
+    const grouped = {};
+
+    rawToukenData.forEach(d => {
+        const isMatchFilter = (typeFilter === 'all' || d.type === typeFilter) && (rarityFilter === 'all' || d.rarity == rarityFilter);
+        const isMatchPeriod = (!startDate || d.date >= startDate);
+
+        if (isMatchFilter && isMatchPeriod) {
+            if (!grouped[d.name]) grouped[d.name] = { labels: [], values: [] };
+            grouped[d.name].labels.push(d.date);
+            grouped[d.name].values.push(d.lv);
+        }
+    });
+
+    const datasets = Object.keys(grouped).map(name => {
+        const labels = grouped[name].labels;
+        const values = grouped[name].values;
+        const lastDate = labels[labels.length - 1];
+        const lastValue = values[values.length - 1];
+        const chartData = labels.map((date, i) => ({ x: date, y: values[i] }));
+        if (lastDate < todayStr) chartData.push({ x: todayStr, y: lastValue }); 
+        return { label: name, data: chartData, borderColor: stringToColor(name), tension: 0.1, fill: false };
+    });
+
+    renderToukenChart('levelChart', datasets, startDate);
+}
+
+// --- チャート描画関数 ---
+function renderChart(id, labels, dataObj) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    const labelNames = { charcoal: '木炭', steel: '玉鋼', coolant: '冷却材', whetstone: '砥石', koban: '小判', requestTicket: '依頼札', helpTicket: '手伝い札' };
+    const colors = { charcoal: '#b54434', steel: '#7f8c8d', coolant: '#3498db', whetstone: '#27ae60', koban: '#f1c40f', requestTicket: '#9b59b6', helpTicket: '#e74c3c' };
+    const datasetArr = Object.keys(dataObj).map(key => ({ label: labelNames[key] || key, data: dataObj[key], borderColor: colors[key], backgroundColor: colors[key], yAxisID: (id === 'itemChart' && key !== 'koban') ? 'y1' : 'y' }));
+    charts[id] = new Chart(ctx, { type: 'line', data: { labels, datasets: datasetArr }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' } }, y: { type: 'linear', display: true, position: 'left' }, y1: { type: 'linear', display: id === 'itemChart', position: 'right', grid: { drawOnChartArea: false } } } } });
+}
+
+function renderToukenChart(id, datasets, minDate) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, {
+        type: 'line', 
+        data: { datasets: datasets.map(ds => ({ ...ds, backgroundColor: ds.borderColor })) },
+        options: { 
+            responsive: true, maintainAspectRatio: false, 
+            scales: { x: { type: 'time', time: { unit: 'day' }, min: minDate } } 
+        }
+    });
+}
+
+// --- 名簿管理・その他UI制御 (省略なし) ---
 function renderMasterEditList() {
     const container = document.getElementById('masterEditList');
     if (!container) return;
-    const sorted = [...toukenMaster].sort((a, b) => {
-        if (a.type !== b.type) return a.type.localeCompare(b.type);
-        return a.name.localeCompare(b.name);
-    });
+    const sorted = [...toukenMaster].sort((a, b) => { if (a.type !== b.type) return a.type.localeCompare(b.type); return a.name.localeCompare(b.name); });
     container.innerHTML = sorted.map(m => `
         <div class="edit-master-row" style="display:flex; gap:5px; align-items:center; padding:10px; border-bottom:1px solid #eee; flex-wrap:wrap;">
             <input type="text" id="editName_${m.id}" value="${m.name}" style="width:100px; padding:5px;">
@@ -159,10 +279,7 @@ function renderMasterEditList() {
                 <option value="剣(極)" ${m.type === '剣(極)' ? 'selected' : ''}>剣(極)</option>
             </select>
             <input type="number" id="editRarity_${m.id}" value="${m.rarity}" style="width:40px; padding:5px;">
-            <div style="margin-left:auto; display:flex; gap:5px;">
-                <button onclick="updateMasterEntry('${m.id}')" style="background:#27ae60; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">更新</button>
-                <button onclick="deleteMasterEntry('${m.id}')" style="background:#7f8c8d; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">削除</button>
-            </div>
+            <div style="margin-left:auto; display:flex; gap:5px;"><button onclick="updateMasterEntry('${m.id}')">更新</button><button onclick="deleteMasterEntry('${m.id}')">削除</button></div>
         </div>
     `).join('');
 }
@@ -171,232 +288,80 @@ window.updateMasterEntry = async (id) => {
     const newName = document.getElementById(`editName_${id}`).value;
     const newType = document.getElementById(`editType_${id}`).value;
     const newRarity = parseInt(document.getElementById(`editRarity_${id}`).value);
-    if (!newName || isNaN(newRarity)) return alert("名前とレア度を正しく入力してください");
-    try {
-        await updateDoc(doc(db, "touken_master", id), {
-            name: newName, type: newType, rarity: newRarity
-        });
-        alert("修正完了しました");
-    } catch (e) {
-        alert("修正に失敗しました");
-    }
+    if (!newName || isNaN(newRarity)) return alert("正しく入力してください");
+    await updateDoc(doc(db, "touken_master", id), { name: newName, type: newType, rarity: newRarity });
+    alert("修正完了");
 };
 
-window.deleteMasterEntry = async (id) => {
-    if (!confirm("この刀剣男士を名簿から削除しますか？")) return;
-    await deleteDoc(doc(db, "touken_master", id));
-};
+window.deleteMasterEntry = async (id) => { if (confirm("削除しますか？")) await deleteDoc(doc(db, "touken_master", id)); };
 
-// --- レベル登録画面の制御 ---
-window.openLevelModal = () => {
-    document.getElementById('lvDate').value = new Date().toISOString().split('T')[0];
-    const container = document.getElementById('levelInputContainer');
-    container.innerHTML = "";
-    rowCount = 0;
-    addInputRow();
-    document.getElementById('levelModal').style.display = 'block';
-};
+window.openLevelModal = () => { document.getElementById('lvDate').value = new Date().toISOString().split('T')[0]; const container = document.getElementById('levelInputContainer'); container.innerHTML = ""; rowCount = 0; addInputRow(); document.getElementById('levelModal').style.display = 'block'; };
 
 window.addInputRow = () => {
-    if (rowCount >= 10) return alert("一度に登録できるのは10振りまでです");
+    if (rowCount >= 10) return alert("一度に10振りまでです");
     rowCount++;
     const rowId = `row_${Date.now()}`;
     const row = document.createElement('div');
     row.className = 'input-row';
     row.id = rowId;
     row.innerHTML = `
-        <select class="type-select" onchange="updateRarityOptions(this)">
-            <option value="">刀種</option>
-            <option value="短刀(極)">短刀(極)</option><option value="脇差(極)">脇差(極)</option>
-            <option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option>
-            <option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option>
-            <option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option>
-        </select>
+        <select class="type-select" onchange="updateRarityOptions(this)"><option value="">刀種</option><option value="短刀(極)">短刀(極)</option><option value="脇差(極)">脇差(極)</option><option value="打刀(極)">打刀(極)</option><option value="太刀(極)">太刀(極)</option><option value="大太刀(極)">大太刀(極)</option><option value="槍(極)">槍(極)</option><option value="薙刀(極)">薙刀(極)</option><option value="剣(極)">剣(極)</option></select>
         <select class="rarity-select" onchange="updateNameOptions(this)"><option value="">レア度</option></select>
         <select class="name-select"><option value="">名前</option></select>
         <input type="number" class="lv-input" placeholder="Lv">
-        <button class="remove-row-btn" onclick="removeInputRow('${rowId}')">×</button>
+        <button onclick="removeInputRow('${rowId}')">×</button>
     `;
     document.getElementById('levelInputContainer').appendChild(row);
 };
 
-window.removeInputRow = (id) => {
-    const row = document.getElementById(id);
-    if (row) { row.remove(); rowCount--; }
-    if (rowCount === 0) addInputRow();
-};
+window.removeInputRow = (id) => { const row = document.getElementById(id); if (row) { row.remove(); rowCount--; } if (rowCount === 0) addInputRow(); };
+window.updateRarityOptions = (el) => { const type = el.value; const raritySelect = el.parentElement.querySelector('.rarity-select'); const rarities = [...new Set(toukenMaster.filter(t => t.type === type).map(t => t.rarity))].sort(); raritySelect.innerHTML = '<option value="">レア度</option>' + rarities.map(r => `<option value="${r}">${r}</option>`).join(''); };
+window.updateNameOptions = (el) => { const rarity = el.value; const type = el.parentElement.querySelector('.type-select').value; const nameSelect = el.parentElement.querySelector('.name-select'); const names = toukenMaster.filter(t => t.type === type && t.rarity == rarity).map(t => t.name); nameSelect.innerHTML = '<option value="">名前選択</option>' + names.map(n => `<option value="${n}">${n}</option>`).join(''); };
 
-window.updateRarityOptions = (el) => {
-    const type = el.value;
-    const raritySelect = el.parentElement.querySelector('.rarity-select');
-    const rarities = [...new Set(toukenMaster.filter(t => t.type === type).map(t => t.rarity))].sort();
-    raritySelect.innerHTML = '<option value="">レア度</option>' + rarities.map(r => `<option value="${r}">${r}</option>`).join('');
-};
-
-window.updateNameOptions = (el) => {
-    const rarity = el.value;
-    const type = el.parentElement.querySelector('.type-select').value;
-    const nameSelect = el.parentElement.querySelector('.name-select');
-    const names = toukenMaster.filter(t => t.type === type && t.rarity == rarity).map(t => t.name);
-    nameSelect.innerHTML = '<option value="">名前選択</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
-};
-
-// --- 保存・表示処理 ---
 async function saveAllLevels() {
-    const user = auth.currentUser;
-    const dateVal = document.getElementById('lvDate').value;
-    if (!user || !dateVal) return alert("日付を確認してください");
+    const user = auth.currentUser; const dateVal = document.getElementById('lvDate').value; if (!user || !dateVal) return alert("日付を確認してください");
     const rows = document.querySelectorAll('.input-row');
-    let count = 0;
     for (const row of rows) {
-        const name = row.querySelector('.name-select').value;
-        const lv = parseInt(row.querySelector('.lv-input').value);
-        const type = row.querySelector('.type-select').value;
-        const rarity = parseInt(row.querySelector('.rarity-select').value);
-        if (name && lv) {
-            await addDoc(collection(db, "users", user.uid, "touken"), {
-                date: dateVal, name, lv, type, rarity, timestamp: new Date()
-            });
-            count++;
-        }
+        const name = row.querySelector('.name-select').value; const lv = parseInt(row.querySelector('.lv-input').value); const type = row.querySelector('.type-select').value; const rarity = parseInt(row.querySelector('.rarity-select').value);
+        if (name && lv) await addDoc(collection(db, "users", user.uid, "touken"), { date: dateVal, name, lv, type, rarity, timestamp: new Date() });
     }
-    if (count > 0) { closeModal('levelModal'); } else { alert("名前とレベルを入力してください"); }
+    closeModal('levelModal');
 }
 
 async function saveResource() {
-    const user = auth.currentUser;
-    const date = document.getElementById('date').value;
-    if (!user || !date) return alert("日付を確認してください");
-    await addDoc(collection(db, "users", user.uid, "resources"), {
-        date,
-        charcoal: parseInt(document.getElementById('charcoal').value) || 0,
-        steel: parseInt(document.getElementById('steel').value) || 0,
-        coolant: parseInt(document.getElementById('coolant').value) || 0,
-        whetstone: parseInt(document.getElementById('whetstone').value) || 0
-    });
+    const user = auth.currentUser; const date = document.getElementById('date').value; if (!user || !date) return alert("日付を確認してください");
+    await addDoc(collection(db, "users", user.uid, "resources"), { date, charcoal: parseInt(document.getElementById('charcoal').value) || 0, steel: parseInt(document.getElementById('steel').value) || 0, coolant: parseInt(document.getElementById('coolant').value) || 0, whetstone: parseInt(document.getElementById('whetstone').value) || 0 });
     closeModal('resourceModal');
 }
 
 async function saveItems() {
-    const user = auth.currentUser;
-    const date = document.getElementById('itemDate').value;
-    if (!user || !date) return alert("日付を確認してください");
-    await addDoc(collection(db, "users", user.uid, "items"), {
-        date,
-        koban: parseInt(document.getElementById('koban').value) || 0,
-        requestTicket: parseInt(document.getElementById('requestTicket').value) || 0,
-        helpTicket: parseInt(document.getElementById('helpTicket').value) || 0
-    });
+    const user = auth.currentUser; const date = document.getElementById('itemDate').value; if (!user || !date) return alert("日付を確認してください");
+    await addDoc(collection(db, "users", user.uid, "items"), { date, koban: parseInt(document.getElementById('koban').value) || 0, requestTicket: parseInt(document.getElementById('requestTicket').value) || 0, helpTicket: parseInt(document.getElementById('helpTicket').value) || 0 });
     closeModal('itemModal');
 }
 
 async function saveMasterEntry() {
-    const name = document.getElementById('newMasterName').value;
-    const type = document.getElementById('newMasterType').value;
-    const rarity = parseInt(document.getElementById('newMasterRarity').value);
-    if (!name || !type || isNaN(rarity)) return alert("全項目入力してください");
-    await addDoc(collection(db, "touken_master"), { name, type, rarity });
-    closeModal('masterModal');
-    document.getElementById('newMasterName').value = "";
-    document.getElementById('newMasterRarity').value = "";
+    const name = document.getElementById('newMasterName').value; const type = document.getElementById('newMasterType').value; const rarity = parseInt(document.getElementById('newMasterRarity').value); if (!name || !type || isNaN(rarity)) return alert("全項目入力してください");
+    await addDoc(collection(db, "touken_master"), { name, type, rarity }); closeModal('masterModal');
 }
 
-window.deleteLevelRecord = async (docId) => {
-    if (!confirm("記録を削除しますか？")) return;
-    await deleteDoc(doc(db, "users", auth.currentUser.uid, "touken", docId));
-};
-
-// ★ここを修正：リストをスクロール可能にするスタイルを追加
 function renderEditList() {
-    const container = document.getElementById('levelEditList');
-    if (!container) return;
+    const container = document.getElementById('levelEditList'); if (!container) return;
     const sorted = [...rawToukenData].sort((a, b) => b.date.localeCompare(a.date));
-    
-    // 親要素に高さを制限してスクロールを許可するスタイルを設定
-    container.style.maxHeight = "450px";
-    container.style.overflowY = "auto";
-    container.style.border = "1px solid #eee";
-    container.style.padding = "5px";
-
-    container.innerHTML = sorted.map(d => `
-        <div class="edit-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-            <span>${d.date} | <strong>${d.name}</strong> (Lv${d.lv})</span>
-            <button onclick="deleteLevelRecord('${d.id}')" style="background:#b54434; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">削除</button>
-        </div>
-    `).join('');
+    container.innerHTML = sorted.map(d => `<div class="edit-item"><span>${d.date} | <strong>${d.name}</strong> (Lv${d.lv})</span><button onclick="deleteLevelRecord('${d.id}')">削除</button></div>`).join('');
 }
 
-function updateToukenView() {
-    const typeFilter = document.getElementById('filterType')?.value || 'all';
-    const rarityFilter = document.getElementById('filterRarity')?.value || 'all';
-    const grouped = {};
-    rawToukenData.forEach(d => {
-        if ((typeFilter === 'all' || d.type === typeFilter) && (rarityFilter === 'all' || d.rarity == rarityFilter)) {
-            if (!grouped[d.name]) grouped[d.name] = { labels: [], values: [] };
-            grouped[d.name].labels.push(d.date);
-            grouped[d.name].values.push(d.lv);
-        }
-    });
-    const datasets = Object.keys(grouped).map(name => ({
-        label: name,
-        data: grouped[name].labels.map((date, i) => ({ x: date, y: grouped[name].values[i] })),
-        borderColor: stringToColor(name),
-        tension: 0.1, fill: false
-    }));
-    renderToukenChart('levelChart', datasets);
-}
-
-function renderChart(id, labels, dataObj) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    const colors = { charcoal: '#b54434', steel: '#7f8c8d', coolant: '#3498db', whetstone: '#27ae60', koban: '#f1c40f', requestTicket: '#9b59b6', helpTicket: '#e74c3c' };
-    const datasetArr = Object.keys(dataObj).map(key => ({
-        label: key, data: dataObj[key], borderColor: colors[key],
-        yAxisID: (key === 'koban' ? 'y' : (id === 'itemChart' ? 'y1' : 'y'))
-    }));
-    charts[id] = new Chart(ctx, {
-        type: 'line', data: { labels, datasets: datasetArr },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' } } } }
-    });
-}
-
-function renderToukenChart(id, datasets) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-        type: 'line', data: { datasets },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' } } } }
-    });
-}
-
-function stringToColor(str) {
-    let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    let color = '#'; for (let i = 0; i < 3; i++) color += ('00' + ((hash >> (i * 8)) & 0xFF).toString(16)).substr(-2);
-    return color;
-}
-
-window.switchTab = (id) => {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-};
-
+window.deleteLevelRecord = async (docId) => { if (confirm("削除しますか？")) await deleteDoc(doc(db, "users", auth.currentUser.uid, "touken", docId)); };
+function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); let color = '#'; for (let i = 0; i < 3; i++) color += ('00' + ((hash >> (i * 8)) & 0xFF).toString(16)).substr(-2); return color; }
+window.switchTab = (id) => { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); };
 window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
 
+// --- イベントバインド ---
 const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-
 bindClick('saveBtn', saveResource);
 bindClick('saveItemBtn', saveItems);
-bindClick('openModalBtn', () => { 
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('resourceModal').style.display = 'block'; 
-});
-bindClick('openItemModalBtn', () => { 
-    document.getElementById('itemDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('itemModal').style.display = 'block'; 
-});
+bindClick('openModalBtn', () => { document.getElementById('date').value = new Date().toISOString().split('T')[0]; document.getElementById('resourceModal').style.display = 'block'; });
+bindClick('openItemModalBtn', () => { document.getElementById('itemDate').value = new Date().toISOString().split('T')[0]; document.getElementById('itemModal').style.display = 'block'; });
 bindClick('saveMasterBtn', saveMasterEntry);
 bindClick('saveLevelBtn', saveAllLevels);
 bindClick('addRowBtn', window.addInputRow);
@@ -405,98 +370,39 @@ bindClick('openMasterModalBtn', () => { document.getElementById('masterModal').s
 bindClick('openMasterEditBtn', () => { document.getElementById('masterEditSection').style.display = 'block'; });
 bindClick('openLevelEditBtn', () => { document.getElementById('levelEditSection').style.display = 'block'; });
 bindClick('loginBtn', () => auth.currentUser ? signOut(auth) : signInWithPopup(auth, provider));
+bindClick('openCsvBtn', () => document.getElementById('csvFileInput').click());
+document.getElementById('csvFileInput').onchange = window.handleCsvUpload;
 
 document.getElementById('filterType')?.addEventListener('change', updateToukenView);
 document.getElementById('filterRarity')?.addEventListener('change', updateToukenView);
+document.getElementById('filterPeriod')?.addEventListener('change', updateToukenView); // ★追加分
 
-// --- AI（Gemini）連携設定 ---
-
-// 画像をAIが読める形式（Base64）に変換する補助関数
-async function fileToGenerativePart(file) {
-    const base64EncodedDataPromise = new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(file);
-    });
-    return {
-        inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
-    };
-}
-
-// 画像が選択された時のメイン処理
+// Gemini API 解析 (略)
 window.handleImageUpload = async (input) => {
-    const file = input.files[0];
-    if (!file) return;
-
-    const loadingEl = document.getElementById('aiLoading');
-    loadingEl.style.display = 'block';
-
+    const file = input.files[0]; if (!file) return;
+    const loadingEl = document.getElementById('aiLoading'); loadingEl.style.display = 'block';
     try {
-        // AIモデルの準備（画像認識に強いgemini-1.5-flashを使用）
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        // AIへの指示（プロンプト）
-        const prompt = `
-            この画像から刀剣男士の名前とレベル(Lv)をすべて抽出してください。
-            結果は必ず以下のJSON形式の配列のみで返してください。余計な解説文は不要です。
-            [{"name": "名前", "lv": 数値}, ...]
-        `;
-
-        const imagePart = await fileToGenerativePart(file);
-        const result = await model.generateContent([prompt, imagePart]);
-        const response = await result.response;
-        const text = response.text();
-        
-        // AIが返した文字列からJSON部分だけを抽出してパース
-        const jsonMatch = text.match(/\[.*\]/s);
-        if (!jsonMatch) throw new Error("解析に失敗しました");
-        const data = JSON.parse(jsonMatch[0]);
-
-        // 解析結果をフォームにセット
-        autoFillLevelForm(data);
-
-    } catch (error) {
-        console.error("AI解析エラー:", error);
-        alert("画像の解析に失敗しました。");
-    } finally {
-        loadingEl.style.display = 'none';
-        input.value = ""; // 同じ画像を再度選べるようにリセット
-    }
+        const base64Data = await new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.readAsDataURL(file); });
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: '名前とレベルをJSON形式 [{"name":"名前","lv":数字}] で抽出して。' }, { inline_data: { mime_type: "image/png", data: base64Data } }] }] }) });
+        const result = await response.json();
+        let aiText = result.candidates[0].content.parts[0].text;
+        aiText = aiText.replace(/```json/g, "").replace(/```/g, "").trim();
+        const results = JSON.parse(aiText);
+        if (results.length > 0) autoFillLevelForm(results);
+    } catch (e) { console.error(e); } finally { loadingEl.style.display = 'none'; }
 };
 
-// 解析結果を既存の10行フォームに流し込む関数
-function autoFillLevelForm(aiResults) {
-    // 既存の入力行をすべてクリアして、AIの結果の数だけ行を作る
-    const container = document.getElementById('levelInputContainer');
-    container.innerHTML = "";
-    rowCount = 0;
-
-    aiResults.forEach((res, index) => {
-        if (index >= 10) return; // 最大10件まで
-        
-        // 新しい行を追加
-        addInputRow();
-        const rows = document.querySelectorAll('.input-row');
-        const currentRow = rows[rows.length - 1];
-
-        // 名前からマスタデータを検索
-        const master = toukenMaster.find(m => m.name === res.name);
-
+function autoFillLevelForm(results) {
+    const container = document.getElementById('levelInputContainer'); container.innerHTML = ""; rowCount = 0;
+    results.slice(0, 10).forEach(res => {
+        addInputRow(); const rows = document.querySelectorAll('.input-row'); const currentRow = rows[rows.length - 1];
+        const master = toukenMaster.find(m => m.name === res.name || res.name.includes(m.name));
         if (master) {
-            // マスタに存在する場合、刀種・レア度を自動セット
-            const typeSelect = currentRow.querySelector('.type-select');
-            typeSelect.value = master.type;
-            
-            // 刀種が変わったのでレア度と名前の選択肢を更新（既存の関数を再利用）
-            updateRarityOptions(typeSelect);
-            const raritySelect = currentRow.querySelector('.rarity-select');
-            raritySelect.value = master.rarity;
-
-            updateNameOptions(raritySelect);
-            const nameSelect = currentRow.querySelector('.name-select');
-            nameSelect.value = master.name;
+            const typeSelect = currentRow.querySelector('.type-select'); typeSelect.value = master.type; updateRarityOptions(typeSelect);
+            const raritySelect = currentRow.querySelector('.rarity-select'); raritySelect.value = master.rarity; updateNameOptions(raritySelect);
+            currentRow.querySelector('.name-select').value = master.name;
         }
-
-        // レベルをセット
         currentRow.querySelector('.lv-input').value = res.lv;
     });
 }

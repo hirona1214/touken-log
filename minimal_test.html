@@ -2,52 +2,85 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Gemini API 最小構成テスト</title>
+    <title>Gemini API 疎通テスト（2026年版）</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; line-height: 1.6; }
+        #result { 
+            margin-top: 20px; 
+            padding: 15px; 
+            border-radius: 8px; 
+            background-color: #f0f0f0; 
+            white-space: pre-wrap; 
+            border: 1px solid #ccc;
+            min-height: 50px;
+        }
+        .error { color: #b54434; background-color: #fff5f5 !important; border-color: #eec !important; }
+        .success { color: #27ae60; background-color: #f5fff5 !important; border-color: #cfc !important; }
+        input { width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 10px; }
+        button { padding: 10px 20px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #2980b9; }
+    </style>
 </head>
 <body>
     <h1>Gemini API 疎通テスト</h1>
     
-    <p>1. APIキーを下に貼り付けてください</p>
-    <input type="text" id="apiKey" placeholder="AIzaSy..." style="width: 400px;">
+    <p>1. APIキーを入力してください</p>
+    <input type="text" id="apiKey" placeholder="AIzaSy..." spellcheck="false">
     
-    <p>2. テスト送信（「こんにちは」と送ります）</p>
-    <button id="testBtn">AIに挨拶する</button>
+    <p>2. 下のボタンを押してAIの応答を待ちます</p>
+    <button id="testBtn">接続テスト実行</button>
 
-    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap;">
-        ここに結果が表示されます
-    </div>
+    <div id="result">ここに結果が表示されます</div>
 
-    <!-- ライブラリの読み込み -->
     <script type="module">
         document.getElementById('testBtn').onclick = async () => {
-            const key = document.getElementById('apiKey').value;
+            const key = document.getElementById('apiKey').value.trim();
             const resultDiv = document.getElementById('result');
 
-            if (!key) return alert("APIキーを入力してください");
-            resultDiv.innerText = "通信中...";
+            if (!key) {
+                alert("APIキーを入力してください");
+                return;
+            }
 
-            // ライブラリを通さず、直接「v1」エンドポイントへ投げます
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
+            resultDiv.innerText = "通信中...";
+            resultDiv.className = "";
+
+            // PDFのリストで確認できた、最新の安定版モデル「gemini-2.5-flash」を使用します
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "こんにちは！自己紹介してください。" }] }]
+                        contents: [{
+                            parts: [{ text: "接続テストです。このメッセージが見えていれば成功です。短く返信してください。" }]
+                        }]
                     })
                 });
 
                 const data = await response.json();
 
-                if (data.error) {
-                    throw new Error(`${data.error.code}: ${data.error.message}`);
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTPエラー: ${response.status}\n` +
+                        `コード: ${data.error?.code}\n` +
+                        `メッセージ: ${data.error?.message}`
+                    );
                 }
 
-                resultDiv.innerText = "成功！AIからの返答：\n\n" + data.candidates[0].content.parts[0].text;
+                if (data.candidates && data.candidates[0]) {
+                    const reply = data.candidates[0].content.parts[0].text;
+                    resultDiv.className = "success";
+                    resultDiv.innerText = "成功！\n使用モデル: gemini-2.5-flash\nAIからの返信：\n\n" + reply;
+                } else {
+                    throw new Error("レスポンスの形式が予想外です。");
+                }
+
             } catch (error) {
-                console.error(error);
-                resultDiv.innerText = "エラー発生：\n" + error.message;
+                console.error("Error detail:", error);
+                resultDiv.className = "error";
+                resultDiv.innerText = "エラーが発生しました：\n" + error.message;
             }
         };
     </script>
