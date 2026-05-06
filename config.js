@@ -1,2 +1,2 @@
 // config.js
-export const GEMINI_API_KEY = "AIzaSyArZk5fhj9coNM_B4abYJvWP0lwo1MmFuY";
+export const GEMINI_API_KEY = "AIzaSyDeolOoz1jPwVRwhyvZ-N61lrbTE-YgmBw";
